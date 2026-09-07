@@ -5,52 +5,117 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { logoutAction } from "@/app/admin/actions"
-import { CarIcon, DashboardIcon, MailIcon, MenuIcon, CloseIcon, LogoutIcon, EyeIcon, PlusIcon } from "@/components/icons"
+import {
+  CarIcon,
+  DashboardIcon,
+  MailIcon,
+  MenuIcon,
+  CloseIcon,
+  LogoutIcon,
+  EyeIcon,
+  PlusIcon,
+  UsersIcon,
+  IdCardIcon,
+  NewspaperIcon,
+  GlobeIcon,
+  StarIcon,
+} from "@/components/icons"
 
-const NAV = [
-  { href: "/admin/dashboard", label: "Overview", icon: DashboardIcon },
-  { href: "/admin/cars", label: "Cars", icon: CarIcon },
-  { href: "/admin/inquiries", label: "Inquiries", icon: MailIcon, badge: true },
-]
+export interface NavCounts {
+  /** Unread contact/inquiry messages. */
+  messages: number
+  /** Listings sitting in the approval queue. */
+  awaitingCars: number
+  /** KYC submissions still to review. */
+  pendingKyc: number
+  /** Blog comments awaiting moderation. */
+  pendingComments: number
+  /** Reviews awaiting approval. */
+  pendingReviews: number
+  /** User accounts awaiting approval. */
+  pendingUsers: number
+}
+
+type NavItem = { href: string; label: string; icon: (p: { className?: string }) => React.JSX.Element; count?: number }
 
 interface Props {
   readonly admin: { name: string; email: string }
-  readonly unread: number
+  readonly counts: NavCounts
   readonly children: React.ReactNode
 }
 
-export function AdminShell({ admin, unread, children }: Props) {
+export function AdminShell({ admin, counts, children }: Props) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
 
   useEffect(() => setOpen(false), [pathname])
 
+  const groups: { heading: string | null; items: NavItem[] }[] = [
+    {
+      heading: null,
+      items: [{ href: "/admin/dashboard", label: "Overview", icon: DashboardIcon }],
+    },
+    {
+      heading: "Inventory",
+      items: [
+        { href: "/admin/cars", label: "Cars", icon: CarIcon, count: counts.awaitingCars },
+        { href: "/admin/reviews", label: "Reviews", icon: StarIcon, count: counts.pendingReviews },
+        { href: "/admin/locations", label: "Locations", icon: GlobeIcon },
+      ],
+    },
+    {
+      heading: "People",
+      items: [
+        { href: "/admin/users", label: "Users", icon: UsersIcon, count: counts.pendingUsers },
+        { href: "/admin/kyc", label: "KYC", icon: IdCardIcon, count: counts.pendingKyc },
+      ],
+    },
+    {
+      heading: "Content",
+      items: [
+        { href: "/admin/blog", label: "Blog", icon: NewspaperIcon, count: counts.pendingComments },
+        { href: "/admin/messages", label: "Messages", icon: MailIcon, count: counts.messages },
+      ],
+    },
+  ]
+
+  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
+
   const nav = (
-    <nav className="space-y-1">
-      {NAV.map((item) => {
-        const active = pathname === item.href || pathname.startsWith(`${item.href}/`)
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors ${
-              active ? "bg-brand-500 text-white shadow-btn" : "text-brand-900/75 hover:bg-brand-100 hover:text-brand-500"
-            }`}
-          >
-            <item.icon className="h-[18px] w-[18px]" />
-            <span className="flex-1">{item.label}</span>
-            {item.badge && unread > 0 ? (
-              <span
-                className={`rounded-pill px-2 py-0.5 text-[11px] font-bold ${
-                  active ? "bg-white/20 text-white" : "bg-brand-500 text-white"
+    <nav className="space-y-5">
+      {groups.map((group) => (
+        <div key={group.heading ?? "root"} className="space-y-1">
+          {group.heading ? (
+            <p className="px-4 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">{group.heading}</p>
+          ) : null}
+          {group.items.map((item) => {
+            const active = isActive(item.href)
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors ${
+                  active
+                    ? "bg-brand-500 text-white shadow-btn"
+                    : "text-brand-900/75 hover:bg-brand-100 hover:text-brand-500"
                 }`}
               >
-                {unread}
-              </span>
-            ) : null}
-          </Link>
-        )
-      })}
+                <item.icon className="h-[18px] w-[18px]" />
+                <span className="flex-1">{item.label}</span>
+                {item.count ? (
+                  <span
+                    className={`rounded-pill px-2 py-0.5 text-[11px] font-bold ${
+                      active ? "bg-white/20 text-white" : "bg-brand-500 text-white"
+                    }`}
+                  >
+                    {item.count}
+                  </span>
+                ) : null}
+              </Link>
+            )
+          })}
+        </div>
+      ))}
     </nav>
   )
 

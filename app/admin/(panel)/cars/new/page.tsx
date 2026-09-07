@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { getBrands, getCities, getCurrency } from "@/lib/db"
+import { getDealers } from "@/lib/users"
 import { CarForm, type CarFormValues } from "@/components/admin/car-form"
 import { ChevronLeftIcon } from "@/components/icons"
 
@@ -9,9 +10,11 @@ export const metadata = { title: "Add a car" }
 export default function NewCarPage() {
   const brands = getBrands(false)
   const cities = getCities()
+  const dealers = getDealers()
   const currency = getCurrency()
 
   const initial: CarFormValues = {
+    agent_id: "0",
     title: "",
     description: "",
     address: "",
@@ -63,6 +66,7 @@ export default function NewCarPage() {
         initial={initial}
         brands={brands.map((b) => ({ id: b.id, name: b.name, slug: b.slug }))}
         cities={cities.map((c) => ({ id: c.id, name: c.name, country_id: c.country_id }))}
+        dealers={dealers.map((d) => ({ id: d.id, name: d.name, email: d.email }))}
         currencyIcon={currency.icon}
       />
     </div>

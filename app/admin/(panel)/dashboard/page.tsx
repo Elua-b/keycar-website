@@ -1,11 +1,28 @@
 import Link from "next/link"
 import Image from "next/image"
-import { getAdminStats, getAllCarsForAdmin, getCurrency } from "@/lib/db"
+import { getAdminStats, getAllCarsForAdmin, getCurrency, countAwaitingCars } from "@/lib/db"
 import { getInquiries } from "@/lib/inquiries"
+import { countUsers } from "@/lib/users"
+import { countPendingKyc } from "@/lib/kyc"
+import { countPendingComments } from "@/lib/blog"
+import { countPendingReviews } from "@/lib/reviews"
 import { optimized } from "@/lib/images"
 import { effectivePrice, formatPrice, relativeDate } from "@/lib/format"
 import { cloudinaryConfigured } from "@/lib/cloudinary"
-import { CarIcon, EyeIcon, MailIcon, PlusIcon, StarIcon, TagIcon, ArrowRightIcon, UploadIcon } from "@/components/icons"
+import {
+  CarIcon,
+  EyeIcon,
+  MailIcon,
+  PlusIcon,
+  StarIcon,
+  TagIcon,
+  ArrowRightIcon,
+  UploadIcon,
+  UsersIcon,
+  IdCardIcon,
+  ChatIcon,
+  CheckIcon,
+} from "@/components/icons"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "Overview" }
@@ -16,12 +33,23 @@ export default function AdminDashboardPage() {
   const recent = getAllCarsForAdmin().slice(0, 5)
   const inquiries = getInquiries(5)
 
+  const users = countUsers()
+
   const tiles = [
     { label: "Total cars", value: stats.totalCars, icon: CarIcon, href: "/admin/cars" },
-    { label: "Published", value: stats.published, icon: TagIcon, href: "/admin/cars?status=enable" },
-    { label: "Featured", value: stats.featured, icon: StarIcon, href: "/admin/cars?featured=1" },
+    { label: "Published", value: stats.published, icon: TagIcon, href: "/admin/cars?scope=enable" },
+    { label: "Featured", value: stats.featured, icon: StarIcon, href: "/admin/cars?scope=featured" },
     { label: "Total views", value: stats.views, icon: EyeIcon, href: "/admin/cars" },
   ]
+
+  // Anything sitting in a queue, so the first screen says what needs a decision.
+  const queues = [
+    { label: "Cars awaiting approval", value: countAwaitingCars(), icon: CarIcon, href: "/admin/cars?scope=awaiting" },
+    { label: "Users awaiting approval", value: users.pending, icon: UsersIcon, href: "/admin/users?scope=disable" },
+    { label: "KYC to review", value: countPendingKyc(), icon: IdCardIcon, href: "/admin/kyc?status=0" },
+    { label: "Reviews to approve", value: countPendingReviews(), icon: StarIcon, href: "/admin/reviews?status=pending" },
+    { label: "Comments to moderate", value: countPendingComments(), icon: ChatIcon, href: "/admin/blog/comments?status=0" },
+  ].filter((q) => q.value > 0)
 
   return (
     <div className="space-y-8">
@@ -52,6 +80,33 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       ) : null}
+
+      {queues.length ? (
+        <section className="card p-6">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-slate-500">Needs your attention</h2>
+          <ul className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {queues.map((q) => (
+              <li key={q.label}>
+                <Link
+                  href={q.href}
+                  className="flex items-center gap-3 rounded-xl border border-brand-200 px-4 py-3 transition-colors hover:border-brand-500 hover:bg-brand-100"
+                >
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-500 text-white">
+                    <q.icon className="h-4 w-4" />
+                  </span>
+                  <span className="min-w-0 flex-1 text-sm font-semibold text-brand-900">{q.label}</span>
+                  <span className="rounded-pill bg-brand-900 px-2.5 py-0.5 text-xs font-bold text-white">{q.value}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : (
+        <p className="flex items-center gap-2.5 rounded-2xl bg-brand-100 px-5 py-4 text-sm font-medium text-brand-800">
+          <CheckIcon className="h-4 w-4 shrink-0" />
+          Nothing is waiting for approval — you are all caught up.
+        </p>
+      )}
 
       {/* Stat tiles */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -135,7 +190,7 @@ export default function AdminDashboardPage() {
         <section className="card overflow-hidden">
           <header className="flex items-center justify-between border-b border-brand-200 px-6 py-4">
             <h2 className="font-bold text-brand-900">Latest inquiries</h2>
-            <Link href="/admin/inquiries" className="text-sm font-semibold text-brand-500 hover:text-brand-600">
+            <Link href="/admin/messages" className="text-sm font-semibold text-brand-500 hover:text-brand-600">
               View all
             </Link>
           </header>

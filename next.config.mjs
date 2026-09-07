@@ -20,6 +20,19 @@ const nextConfig = {
   },
   // cloudinary's SDK must stay on the Node runtime rather than being bundled.
   serverExternalPackages: ["cloudinary"],
+
+  /**
+   * The Laravel site this replaces used a few different paths. Car and blog
+   * detail URLs are unchanged, so the pages that carry search rankings keep
+   * them; these three renames need a permanent redirect so the rankings follow.
+   */
+  async redirects() {
+    return [
+      { source: "/blogs", destination: "/blog", permanent: true },
+      { source: "/about-us", destination: "/about", permanent: true },
+      { source: "/contact-us", destination: "/contact", permanent: true },
+    ]
+  },
 }
 
 export default nextConfig

@@ -52,6 +52,7 @@ function parseBody(body: Record<string, unknown>): { input?: CarInput; error?: s
 
   return {
     input: {
+      agent_id: numOrNull(body.agent_id) ?? 0,
       title,
       description: str(body.description, 20000) ?? "",
       address: str(body.address, 500) ?? "",
