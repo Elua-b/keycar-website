@@ -75,7 +75,7 @@ export function ImageUploader({ label, hint, multiple = false, value, onChange }
           <UploadIcon className="h-5 w-5" />
         </span>
         <span className="text-sm font-semibold text-brand-900">
-          {busy ? "Uploading to Cloudinary…" : "Drop images here or click to browse"}
+          {busy ? "Saving image to server…" : "Drop images here or click to browse"}
         </span>
         <span className="text-xs text-slate-500">JPEG, PNG, WebP or AVIF · up to 10MB each</span>
         <input

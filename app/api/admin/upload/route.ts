@@ -1,25 +1,14 @@
 import { NextResponse } from "next/server"
 import { currentAdmin } from "@/lib/auth"
-import { ALLOWED_MIME, MAX_UPLOAD_BYTES, cloudinaryConfigured, uploadImage } from "@/lib/cloudinary"
+import { ALLOWED_MIME, MAX_UPLOAD_BYTES, uploadImage } from "@/lib/cloudinary"
 
 export const runtime = "nodejs"
 
-/** Uploads one or more images to Cloudinary and returns their secure URLs. */
+/** Uploads one or more images to local server storage and returns their public URLs. */
 export async function POST(request: Request) {
   const admin = await currentAdmin()
   if (!admin) {
     return NextResponse.json({ ok: false, error: "Not signed in." }, { status: 401 })
-  }
-
-  if (!cloudinaryConfigured) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error:
-          "Cloudinary is not configured. Add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET to .env and restart.",
-      },
-      { status: 503 },
-    )
   }
 
   let form: FormData

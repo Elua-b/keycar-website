@@ -8,7 +8,6 @@ import { countPendingComments } from "@/lib/blog"
 import { countPendingReviews } from "@/lib/reviews"
 import { optimized } from "@/lib/images"
 import { effectivePrice, formatPrice, relativeDate } from "@/lib/format"
-import { cloudinaryConfigured } from "@/lib/cloudinary"
 import {
   CarIcon,
   EyeIcon,
@@ -63,23 +62,6 @@ export default function AdminDashboardPage() {
           Add a car
         </Link>
       </header>
-
-      {!cloudinaryConfigured ? (
-        <div className="flex flex-wrap items-start gap-4 rounded-2xl border border-brand-300 bg-brand-100 p-5">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-500 text-white">
-            <UploadIcon className="h-5 w-5" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="font-bold text-brand-900">Cloudinary isn&apos;t configured yet</p>
-            <p className="mt-1 text-sm text-brand-800">
-              Image uploads will fail until you set <code className="font-mono text-xs">CLOUDINARY_CLOUD_NAME</code>,{" "}
-              <code className="font-mono text-xs">CLOUDINARY_API_KEY</code> and{" "}
-              <code className="font-mono text-xs">CLOUDINARY_API_SECRET</code> in your{" "}
-              <code className="font-mono text-xs">.env</code> file, then restart the dev server.
-            </p>
-          </div>
-        </div>
-      ) : null}
 
       {queues.length ? (
         <section className="card p-6">

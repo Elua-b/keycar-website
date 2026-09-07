@@ -1,22 +1,13 @@
 import "server-only"
-import { v2 as cloudinary } from "cloudinary"
+import { mkdir, unlink, writeFile } from "node:fs/promises"
+import { randomUUID } from "node:crypto"
+import path from "node:path"
 
-const cloudName = process.env.CLOUDINARY_CLOUD_NAME
-const apiKey = process.env.CLOUDINARY_API_KEY
-const apiSecret = process.env.CLOUDINARY_API_SECRET
+const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "cars")
+const PUBLIC_PREFIX = "/uploads/cars"
 
-export const cloudinaryConfigured = Boolean(cloudName && apiKey && apiSecret)
-
-if (cloudinaryConfigured) {
-  cloudinary.config({
-    cloud_name: cloudName,
-    api_key: apiKey,
-    api_secret: apiSecret,
-    secure: true,
-  })
-}
-
-export const CLOUDINARY_FOLDER = "keycar/cars"
+// Kept for the dashboard import compatibility; local storage is always available.
+export const cloudinaryConfigured = true
 
 export interface UploadResult {
   url: string
@@ -27,53 +18,34 @@ export interface UploadResult {
   format: string
 }
 
-/** Uploads a single image buffer and returns the secure URL to store in the DB. */
+/** Uploads a single image buffer to the server and returns its public URL. */
 export async function uploadImage(buffer: Buffer, filename?: string): Promise<UploadResult> {
-  if (!cloudinaryConfigured) {
-    throw new Error(
-      "Cloudinary is not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET in .env",
-    )
-  }
+  await mkdir(UPLOAD_DIR, { recursive: true })
 
-  const result = await new Promise<Record<string, unknown>>((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      {
-        folder: CLOUDINARY_FOLDER,
-        resource_type: "image",
-        // Strip metadata and cap the stored size; delivery-time transforms
-        // in lib/images.ts handle the responsive variants.
-        transformation: [{ width: 2000, height: 2000, crop: "limit" }, { quality: "auto:good" }],
-        public_id: filename ? filename.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "-") : undefined,
-        unique_filename: true,
-        overwrite: false,
-      },
-      (error, uploaded) => {
-        if (error) reject(new Error(error.message))
-        else if (!uploaded) reject(new Error("Cloudinary returned no result"))
-        else resolve(uploaded as unknown as Record<string, unknown>)
-      },
-    )
-    stream.end(buffer)
-  })
+  const extension = path.extname(filename || "").toLowerCase() || ".jpg"
+  const safeExtension = /^[.][a-z0-9]{2,5}$/.test(extension) ? extension : ".jpg"
+  const storedName = `${Date.now()}-${randomUUID()}${safeExtension}`
+  const storedPath = path.join(UPLOAD_DIR, storedName)
+  await writeFile(storedPath, buffer, { flag: "wx" })
 
   return {
-    url: String(result.secure_url),
-    publicId: String(result.public_id),
-    width: Number(result.width) || 0,
-    height: Number(result.height) || 0,
-    bytes: Number(result.bytes) || 0,
-    format: String(result.format ?? ""),
+    url: `${PUBLIC_PREFIX}/${storedName}`,
+    publicId: storedName,
+    width: 0,
+    height: 0,
+    bytes: buffer.byteLength,
+    format: safeExtension.slice(1),
   }
 }
 
 export async function deleteImage(publicId: string): Promise<void> {
-  if (!cloudinaryConfigured) return
-  await cloudinary.uploader.destroy(publicId, { resource_type: "image" })
+  if (!/^[a-zA-Z0-9._-]+$/.test(publicId)) return
+  await unlink(path.join(UPLOAD_DIR, publicId)).catch(() => undefined)
 }
 
-/** Recovers the public id from a stored Cloudinary URL, so deletes can find it. */
+/** Recovers the stored filename from a local upload URL. */
 export function publicIdFromUrl(url: string): string | null {
-  const m = url.match(/\/upload\/(?:[^/]+\/)*?v\d+\/(.+)\.[a-zA-Z0-9]+$/)
+  const m = url.match(/^\/uploads\/cars\/([^/]+)$/)
   return m ? m[1] : null
 }
 
