@@ -16,6 +16,7 @@ import { CarCard } from "@/components/car-card"
 import { CarGallery } from "@/components/car-gallery"
 import { InquiryForm } from "@/components/inquiry-form"
 import { effectivePrice, formatMileage, formatPrice, hasDiscount, discountPercent, parseFeatures, titleCase, relativeDate } from "@/lib/format"
+import { optimized } from "@/lib/images"
 import {
   CalendarIcon,
   CheckIcon,
@@ -36,9 +37,20 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params
   const car = getCarBySlug(slug)
   if (!car) return { title: "Car not found" }
+  const description =
+    car.seo_description || car.description?.slice(0, 155) || `${car.title} for ${car.purpose}.`
+
   return {
     title: car.seo_title || car.title,
-    description: car.seo_description || car.description?.slice(0, 155) || `${car.title} for ${car.purpose}.`,
+    description,
+    alternates: { canonical: `/listing/${car.slug}` },
+    openGraph: {
+      title: car.seo_title || car.title,
+      description,
+      type: "article",
+      url: `/listing/${car.slug}`,
+      images: car.thumb_image ? [{ url: optimized(car.thumb_image, 1200, 630) }] : undefined,
+    },
   }
 }
 

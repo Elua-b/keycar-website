@@ -59,12 +59,12 @@ export async function markInquiryAction(formData: FormData): Promise<void> {
   const id = Number(formData.get("id"))
   const read = String(formData.get("read") ?? "1") === "1"
   if (Number.isFinite(id)) markInquiryRead(id, read)
-  revalidatePath("/admin/inquiries")
+  revalidatePath("/admin/messages")
 }
 
 export async function deleteInquiryAction(formData: FormData): Promise<void> {
   await requireAdmin()
   const id = Number(formData.get("id"))
   if (Number.isFinite(id)) deleteInquiry(id)
-  revalidatePath("/admin/inquiries")
+  revalidatePath("/admin/messages")
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { addInquiry } from "@/lib/inquiries"
-import { getCarBySlug } from "@/lib/db"
+import { getCarBySlug, getSettings } from "@/lib/db"
 
 export const runtime = "nodejs"
 
@@ -40,6 +40,7 @@ export async function POST(request: Request) {
   const phone = body.phone ? String(body.phone).trim() : null
   const message = String(body.message ?? "").trim()
   const carSlug = body.carSlug ? String(body.carSlug).trim() : null
+  const subject = body.subject ? String(body.subject).trim().slice(0, 180) : null
 
   if (name.length < 2 || name.length > 120) {
     return NextResponse.json({ ok: false, error: "Please enter your name." }, { status: 400 })
@@ -56,6 +57,14 @@ export async function POST(request: Request) {
 
   const car = carSlug ? getCarBySlug(carSlug) : null
 
+  // Admin > Messages > Settings can turn off storing messages entirely, the
+  // way the Laravel `save_contact_message` toggle did. A listing enquiry is
+  // always kept — it is addressed to a seller, not to the site inbox.
+  const settings = getSettings()
+  if (!carSlug && settings.save_contact_message !== "enable") {
+    return NextResponse.json({ ok: true })
+  }
+
   try {
     addInquiry({
       car_id: car?.id ?? null,
@@ -63,6 +72,7 @@ export async function POST(request: Request) {
       name,
       email,
       phone,
+      subject,
       message,
     })
   } catch {
