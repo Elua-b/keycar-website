@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { getBrands, getCarById, getCities, getCurrency, getGallery } from "@/lib/db"
+import { getDealers } from "@/lib/users"
 import { parseFeatures } from "@/lib/format"
 import { CarForm, type CarFormValues } from "@/components/admin/car-form"
 import { ChevronLeftIcon, EyeIcon } from "@/components/icons"
@@ -17,6 +18,7 @@ export default async function EditCarPage({ params }: { params: Promise<{ id: st
 
   const brands = getBrands(false)
   const cities = getCities()
+  const dealers = getDealers()
   const currency = getCurrency()
   const gallery = getGallery(car.id)
 
@@ -24,6 +26,7 @@ export default async function EditCarPage({ params }: { params: Promise<{ id: st
 
   const initial: CarFormValues = {
     id: car.id,
+    agent_id: String(car.agent_id ?? 0),
     title: car.title ?? "",
     description: car.description ?? "",
     address: car.address ?? "",
@@ -81,6 +84,7 @@ export default async function EditCarPage({ params }: { params: Promise<{ id: st
         initial={initial}
         brands={brands.map((b) => ({ id: b.id, name: b.name, slug: b.slug }))}
         cities={cities.map((c) => ({ id: c.id, name: c.name, country_id: c.country_id }))}
+        dealers={dealers.map((d) => ({ id: d.id, name: d.name, email: d.email }))}
         currencyIcon={currency.icon}
       />
     </div>

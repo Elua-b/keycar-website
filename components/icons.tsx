@@ -223,3 +223,31 @@ export const PaletteIcon = (p: P) => (
     <circle cx="15.5" cy="10.5" r="1" />
   </svg>
 )
+
+export const NewspaperIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M4 5a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1v14H5a1 1 0 0 1-1-1V5Z" />
+    <path d="M17 8h2a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-2M7 8h7M7 12h7M7 16h4" />
+  </svg>
+)
+
+export const GlobeIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M3 12h18M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18Z" />
+  </svg>
+)
+
+export const IdCardIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <rect x="3" y="5" width="18" height="14" rx="2" />
+    <circle cx="9" cy="11" r="2" />
+    <path d="M6 16c.6-1.4 1.7-2 3-2s2.4.6 3 2M15 10h3M15 13.5h3" />
+  </svg>
+)
+
+export const ChatIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M20 12a7 7 0 0 1-7 7H8l-4 3v-4.5A7 7 0 0 1 6.5 5.6 7 7 0 0 1 13 5a7 7 0 0 1 7 7Z" />
+  </svg>
+)

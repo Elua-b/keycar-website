@@ -1,11 +1,16 @@
 # Keycar — Next.js website
 
-The Keycar car marketplace rebuilt as a Next.js 16 + Tailwind project. It reads
-and writes **the same SQLite database as the Laravel app** (`keycar/database/database.sqlite`),
-using the same tables and the same column names — nothing was migrated or copied.
+The Keycar car marketplace rebuilt as a Next.js 16 + Tailwind project, replacing
+the Laravel app in `../keycar`.
 
-New car photos upload to **Cloudinary**; the existing `uploads/...` paths still
-resolve against the Laravel app, so old and new images coexist.
+It runs on **SQLite** (`node:sqlite`, no ORM) using the Laravel schema unchanged —
+same tables, same column names, same `*_translations` split — so the two apps
+describe the same data. The Laravel install itself is configured for MySQL, so
+there is no shared file: `npm run init-db` creates the SQLite database locally
+from that schema and seeds it with sample content.
+
+New photos upload to **Cloudinary**; legacy `uploads/...` paths still resolve
+against the Laravel app if you run it, so old and new images coexist.
 
 ## Stack
 
@@ -18,6 +23,7 @@ No component library and no ORM — the six runtime dependencies are it.
 ```bash
 npm install
 cp .env.example .env     # then fill in the values below
+npm run init-db          # create + seed the SQLite database
 npm run dev              # http://localhost:3000
 ```
 
@@ -25,7 +31,7 @@ npm run dev              # http://localhost:3000
 
 | Variable | What it does |
 |---|---|
-| `DATABASE_PATH` | Absolute path to the Laravel `database.sqlite`. **Required.** |
+| `DATABASE_PATH` | Absolute path to the SQLite file. **Required.** `npm run init-db` creates it. |
 | `LARAVEL_PUBLIC_URL` | Base URL of the Laravel app, so legacy `uploads/...` images resolve. |
 | `DEFAULT_LANG` | Language code used against the `*_translations` tables. Defaults to `en`. |
 | `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | From your Cloudinary dashboard → Settings → API Keys. Uploads fail without these. |
@@ -67,6 +73,32 @@ Once signed in: **Overview** (stats, recent cars, latest inquiries), **Cars**
 (publish/hide, feature, edit, delete), **Add a car** (full spec form with drag-and-drop
 Cloudinary upload), **Inquiries** (messages from listing pages and the contact form).
 
+### The six management areas
+
+Each mirrors a Laravel controller, including its guards and status vocabulary.
+
+| Area | Screens | Ported from |
+|---|---|---|
+| **Cars** | list with All / Awaiting approval / Published / Hidden / Featured / Drafts, approve-and-publish, feature, seller assignment, full spec editor | `Modules/Car/…/CarController` |
+| **Reviews** | approve, unapprove, delete; only approved reviews reach the site | `CarController::review_*` |
+| **Locations** | countries and cities (cities carry a translated name), both deletes blocked while listings point at them | `Modules/Country`, `Modules/City` |
+| **Users** | active / pending / dealer lists, profile editor, suspend, delete (blocked while they own listings) | `Admin/UserController` |
+| **KYC** | document types CRUD, submission queue with Pending / Approved / Rejected, approving stamps `users.kyc_status` | `Modules/Kyc` |
+| **Blog** | posts, categories, comment moderation, plus the public `/blog` and `/blog/[slug]` | `Modules/Blog` |
+| **Messages** | one inbox for contact-page messages and listing enquiries, read/unread, delete, settings | `Modules/ContactMessage` |
+
+Two deliberate departures from Laravel:
+
+- **Contact messages and car enquiries share one table.** Laravel's
+  `ContactMessage` module wrote to `contact_messages`, but that migration was
+  never run — the table does not exist in the MySQL database. Both kinds of
+  message go to `car_inquiries` instead; one carries a car slug, the other a
+  subject. Admin → Messages → Settings keeps the `save_contact_message` and
+  `send_contact_message` toggles.
+- **Emails are not sent.** Laravel mailed on KYC decisions and contact messages.
+  No SMTP credentials are wired up here, so those points are no-ops; the
+  "email a copy" toggle is off and labelled as such.
+
 ## Colours
 
 Blue and white only, taken from the Laravel stylesheet:
@@ -89,31 +121,64 @@ app/
   page.tsx                    home — hero search, body types, showcase, brands
   listings/page.tsx           browse with filters, sorting, pagination
   listing/[slug]/page.tsx     detail — gallery, specs, features, inquiry form
+  blog/                       article index + detail with comments
   about/, contact/
   admin/
     page.tsx                  login
-    (panel)/                  authenticated shell: dashboard, cars, inquiries
+    actions.ts                car + message server actions
+    manage-actions.ts         users, KYC, blog, locations, reviews, settings
+    (panel)/                  authenticated shell
+      dashboard/              stats and the "needs your attention" queues
+      cars/                   list, approval queue, add, edit
+      reviews/                approve or remove buyer reviews
+      locations/              countries; locations/cities for cities
+      users/                  list and per-user profile
+      kyc/                    submission queue; kyc/types for document types
+      blog/                   posts, blog/new, blog/[id]/edit, categories, comments
+      messages/               inbox; messages/settings
   api/
-    inquiries/                public contact + car inquiry endpoint (rate limited)
+    inquiries/                public contact + car enquiry endpoint (rate limited)
+    comments/                 public blog comment endpoint (rate limited)
     admin/upload/             Cloudinary upload (auth required)
     admin/cars/               create + update (auth required)
+    admin/blog/               create + update posts (auth required)
 lib/
-  db.ts                       every query; column names mirror Laravel exactly
+  db.ts                       cars, brands, settings, currency, stats
+  users.ts                    the Laravel `users` table (sellers, not admins)
+  kyc.ts                      kyc_types + kyc_information
+  blog.ts                     posts, categories, comments
+  locations.ts                countries + cities
+  reviews.ts                  listing reviews
+  inquiries.ts                the one table this app adds (see below)
   auth.ts                     HMAC-signed session cookie, bcrypt against `admins`
   cloudinary.ts               upload/delete helpers
   images.ts                   resolves Cloudinary vs legacy Laravel paths
   format.ts                   price, mileage, features, relative dates
-  inquiries.ts                the one table this app adds (see below)
+scripts/
+  init-sqlite.mjs             schema + sample data (npm run init-db)
+  create-admin.mjs            create or reset an admin account
 proxy.ts                      optimistic redirect for /admin/*
 ```
 
 ## The one schema addition
 
-Laravel's `ContactMessage` module was a stub that only sent email — there was no
-table to reuse. `lib/inquiries.ts` creates `car_inquiries` on first use. Nothing
-else touches it, so the Laravel app is unaffected.
+Laravel's `ContactMessage` module never had its migration run, so there was no
+table to reuse. `lib/inquiries.ts` creates `car_inquiries` on first use — the
+same shape plus a `subject` column and an optional car link. Every other table
+comes straight from the Laravel schema.
+
+`scripts/init-sqlite.mjs` owns the schema and is safe to re-run: tables are
+created `IF NOT EXISTS`, new columns are added through a `PRAGMA table_info`
+check, and sample rows are only written into tables that are still empty.
 
 ## Notes
+
+- **Prices are in Rwandan francs.** The currency comes from the default row in
+  `multi_currencies` (`currency_icon` `RWF`, `currency_position` `after_price`),
+  read by `getCurrency()` in [`lib/db.ts`](lib/db.ts) and rendered by
+  `formatPrice()` in [`lib/format.ts`](lib/format.ts) — change that one row to
+  switch currency; `DEFAULT_CURRENCY` is only the fallback when the row is missing.
+  Amounts already in the database are never rescaled automatically.
 
 - Every page that reads the database is `force-dynamic`, since the admin changes
   inventory at runtime.

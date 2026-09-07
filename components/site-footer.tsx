@@ -110,6 +110,9 @@ export function SiteFooter({ appName = "Keycar", email, phone, address, copyrigh
             <Link href="/about" className="hover:text-white">
               About
             </Link>
+            <Link href="/blog" className="hover:text-white">
+              Blog
+            </Link>
             <Link href="/contact" className="hover:text-white">
               Contact
             </Link>
