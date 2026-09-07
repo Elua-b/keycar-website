@@ -1,21 +1,27 @@
-/** Currency defaults mirror the `multi_currencies` row (USD, symbol before price). */
+/** Currency defaults mirror the default `multi_currencies` row (RWF, code after price). */
 export interface Currency {
   icon: string
   code: string
   position: string
 }
 
-export const DEFAULT_CURRENCY: Currency = { icon: "$", code: "USD", position: "before_price" }
+export const DEFAULT_CURRENCY: Currency = { icon: "RWF", code: "RWF", position: "after_price" }
+
+/** Non-breaking, so an amount and its currency code never wrap onto two lines. */
+const NBSP = "\u00a0"
 
 export function formatPrice(value: number | null | undefined, currency: Currency = DEFAULT_CURRENCY): string {
   if (value === null || value === undefined) return "—"
   const n = Number(value)
   if (!Number.isFinite(n)) return "—"
+  // RWF has no minor unit, so whole amounts stay whole; a currency that does
+  // use cents still shows them.
   const body = n.toLocaleString("en-US", {
     minimumFractionDigits: n % 1 === 0 ? 0 : 2,
     maximumFractionDigits: 2,
   })
-  return currency.position === "after_price" ? `${body}${currency.icon}` : `${currency.icon}${body}`
+  // A trailing code ("99,000,000 RWF") needs the space; a leading symbol ("$99") does not.
+  return currency.position === "after_price" ? `${body}${NBSP}${currency.icon}` : `${currency.icon}${body}`
 }
 
 /** The price a buyer actually pays: offer price when set, otherwise regular. */

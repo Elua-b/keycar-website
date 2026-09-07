@@ -19,6 +19,7 @@ function ensureTable(): void {
       name       TEXT NOT NULL,
       email      TEXT NOT NULL,
       phone      TEXT,
+      subject    TEXT,
       message    TEXT NOT NULL,
       is_read    INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL
@@ -34,6 +35,7 @@ export interface Inquiry {
   name: string
   email: string
   phone: string | null
+  subject: string | null
   message: string
   is_read: number
   created_at: string
@@ -45,6 +47,7 @@ export interface NewInquiry {
   name: string
   email: string
   phone?: string | null
+  subject?: string | null
   message: string
 }
 
@@ -53,8 +56,8 @@ export function addInquiry(input: NewInquiry): number {
   const ts = new Date().toISOString().slice(0, 19).replace("T", " ")
   const info = getDb()
     .prepare(
-      `INSERT INTO car_inquiries (car_id, car_slug, name, email, phone, message, is_read, created_at)
-       VALUES (?,?,?,?,?,?,0,?)`,
+      `INSERT INTO car_inquiries (car_id, car_slug, name, email, phone, subject, message, is_read, created_at)
+       VALUES (?,?,?,?,?,?,?,0,?)`,
     )
     .run(
       input.car_id ?? null,
@@ -62,6 +65,7 @@ export function addInquiry(input: NewInquiry): number {
       input.name,
       input.email,
       input.phone ?? null,
+      input.subject ?? null,
       input.message,
       ts,
     )
@@ -73,6 +77,23 @@ export function getInquiries(limit = 200): Inquiry[] {
   return getDb()
     .prepare("SELECT * FROM car_inquiries ORDER BY created_at DESC LIMIT ?")
     .all(limit) as unknown as Inquiry[]
+}
+
+export function getInquiry(id: number): Inquiry | null {
+  ensureTable()
+  const row = getDb().prepare("SELECT * FROM car_inquiries WHERE id = ?").get(id) as unknown as Inquiry | undefined
+  return row ?? null
+}
+
+export function countInquiries() {
+  ensureTable()
+  const db = getDb()
+  const one = (sql: string) => ((db.prepare(sql).get() as { n: number } | undefined)?.n ?? 0)
+  return {
+    total: one("SELECT COUNT(*) AS n FROM car_inquiries"),
+    unread: one("SELECT COUNT(*) AS n FROM car_inquiries WHERE is_read = 0"),
+    aboutCars: one("SELECT COUNT(*) AS n FROM car_inquiries WHERE car_slug IS NOT NULL"),
+  }
 }
 
 export function countUnreadInquiries(): number {

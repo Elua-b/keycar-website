@@ -2,15 +2,14 @@ import "server-only"
 import { DatabaseSync } from "node:sqlite"
 
 /**
- * Reads the SAME SQLite file the Laravel app uses — no copy, no migration.
- * Table and column names below mirror the Laravel schema exactly, so both
- * apps can run against this database at the same time.
+ * Every car, brand and settings query. Table and column names mirror the
+ * schema the Laravel app used, so production data imports without conversion.
  */
 
 const DB_PATH = process.env.DATABASE_PATH
 
 if (!DB_PATH) {
-  throw new Error("DATABASE_PATH is not set. Point it at the Laravel database/database.sqlite file.")
+  throw new Error("DATABASE_PATH is not set. Run `npm run init-db`, or point it at your SQLite file.")
 }
 
 // Next.js hot-reloads modules in dev; keep one handle on globalThis so we
@@ -19,7 +18,7 @@ const globalForDb = globalThis as unknown as { __keycarDb?: DatabaseSync }
 
 function connect(): DatabaseSync {
   const db = new DatabaseSync(DB_PATH!, { readOnly: false })
-  // WAL lets Laravel and Next.js read/write concurrently without locking each other out.
+  // WAL keeps readers from blocking the writer, which matters under concurrent requests.
   db.exec("PRAGMA journal_mode = WAL")
   db.exec("PRAGMA busy_timeout = 5000")
   return db
@@ -376,6 +375,45 @@ export function getSettings() {
     twitter: (row?.twitter as string) || null,
     open_day: (row?.open_day as string) || null,
     closed_day: (row?.closed_day as string) || null,
+    contact_message_mail: (row?.contact_message_mail as string) || (row?.email as string) || null,
+    send_contact_message: (row?.send_contact_message as string) || "disable",
+    save_contact_message: (row?.save_contact_message as string) || "enable",
+  }
+}
+
+export interface ContactSettingsInput {
+  contact_message_mail: string
+  send_contact_message: boolean
+  save_contact_message: boolean
+}
+
+/** The three toggles the Laravel ContactMessage settings form wrote. */
+export function updateContactSettings(input: ContactSettingsInput): void {
+  const db = getDb()
+  const ts = new Date().toISOString().slice(0, 19).replace("T", " ")
+  const row = db.prepare("SELECT id FROM settings LIMIT 1").get() as { id: number } | undefined
+
+  if (row) {
+    db.prepare(
+      "UPDATE settings SET contact_message_mail = ?, send_contact_message = ?, save_contact_message = ?, updated_at = ? WHERE id = ?",
+    ).run(
+      input.contact_message_mail,
+      input.send_contact_message ? "enable" : "disable",
+      input.save_contact_message ? "enable" : "disable",
+      ts,
+      row.id,
+    )
+  } else {
+    db.prepare(
+      `INSERT INTO settings (contact_message_mail, send_contact_message, save_contact_message, created_at, updated_at)
+       VALUES (?,?,?,?,?)`,
+    ).run(
+      input.contact_message_mail,
+      input.send_contact_message ? "enable" : "disable",
+      input.save_contact_message ? "enable" : "disable",
+      ts,
+      ts,
+    )
   }
 }
 
@@ -385,9 +423,9 @@ export function getCurrency() {
     .prepare("SELECT currency_icon, currency_code, currency_position FROM multi_currencies WHERE is_default = 'Yes' LIMIT 1")
     .get() as { currency_icon: string; currency_code: string; currency_position: string } | undefined
   return {
-    icon: row?.currency_icon ?? "$",
-    code: row?.currency_code ?? "USD",
-    position: row?.currency_position ?? "before_price",
+    icon: row?.currency_icon ?? "RWF",
+    code: row?.currency_code ?? "RWF",
+    position: row?.currency_position ?? "after_price",
   }
 }
 
@@ -415,8 +453,73 @@ export function incrementCarView(id: number): void {
 /* ------------------------------------------------------------------ */
 
 export function getAllCarsForAdmin(): Car[] {
+  return getCarsForAdmin("all")
+}
+
+/**
+ * The admin car list, sliced the way the Laravel module sliced it: everything,
+ * the approval queue, the featured set, or drafts.
+ */
+export type CarScope = "all" | "awaiting" | "featured" | "draft" | "enable" | "disable"
+
+export function getCarsForAdmin(scope: CarScope = "all"): (Car & { agent_name: string | null })[] {
+  const where =
+    {
+      awaiting: "WHERE c.approved_by_admin = 'pending' AND c.is_draft = 'disable'",
+      featured: "WHERE c.is_featured = 'enable' AND c.is_draft = 'disable'",
+      draft: "WHERE c.is_draft = 'enable'",
+      enable: "WHERE c.status = 'enable' AND c.is_draft = 'disable'",
+      disable: "WHERE c.status = 'disable' AND c.is_draft = 'disable'",
+    }[scope as Exclude<CarScope, "all">] ?? ""
+
+  return getDb()
+    .prepare(
+      `SELECT c.*, ct.title, ct.description, ct.address, ct.seo_title, ct.seo_description,
+              bt.name AS brand_name, b.slug AS brand_slug,
+              cityt.name AS city_name, co.name AS country_name,
+              ag.name AS agent_name
+       FROM cars c
+       LEFT JOIN car_translations  ct    ON ct.car_id = c.id    AND ct.lang_code = ?
+       LEFT JOIN brands            b     ON b.id = c.brand_id
+       LEFT JOIN brand_translations bt   ON bt.brand_id = c.brand_id AND bt.lang_code = ?
+       LEFT JOIN cities            city  ON city.id = c.city_id
+       LEFT JOIN city_translations cityt ON cityt.city_id = c.city_id AND cityt.lang_code = ?
+       LEFT JOIN countries         co    ON co.id = c.country_id
+       LEFT JOIN users             ag    ON ag.id = c.agent_id
+       ${where}
+       ORDER BY c.created_at DESC`,
+    )
+    .all(LANG, LANG, LANG) as unknown as (Car & { agent_name: string | null })[]
+}
+
+export function countAwaitingCars(): number {
+  const row = getDb()
+    .prepare("SELECT COUNT(*) AS n FROM cars WHERE approved_by_admin = 'pending' AND is_draft = 'disable'")
+    .get() as { n: number } | undefined
+  return row?.n ?? 0
+}
+
+/** Approving also publishes, which is what the Laravel `car_approval` action did. */
+export function setCarApproval(id: number, approved: boolean): void {
   const db = getDb()
-  return db.prepare(`${CAR_SELECT} ORDER BY c.created_at DESC`).all(LANG, LANG, LANG) as unknown as Car[]
+  const ts = new Date().toISOString().slice(0, 19).replace("T", " ")
+  if (approved) {
+    db.prepare("UPDATE cars SET approved_by_admin = 'approved', status = 'enable', updated_at = ? WHERE id = ?").run(
+      ts,
+      id,
+    )
+  } else {
+    db.prepare("UPDATE cars SET approved_by_admin = 'pending', status = 'disable', updated_at = ? WHERE id = ?").run(
+      ts,
+      id,
+    )
+  }
+}
+
+export function setCarAgent(id: number, agentId: number): void {
+  getDb()
+    .prepare("UPDATE cars SET agent_id = ?, updated_at = ? WHERE id = ?")
+    .run(agentId, new Date().toISOString().slice(0, 19).replace("T", " "), id)
 }
 
 export function getAdminByEmail(email: string) {
@@ -434,6 +537,7 @@ export function getAdminById(id: number) {
 }
 
 export interface CarInput {
+  agent_id: number
   title: string
   description: string
   address: string
@@ -497,9 +601,10 @@ export function createCar(input: CarInput): number {
         interior_color, exterior_color, year, mileage, number_of_owner, fuel_type,
         transmission, seller_type, rent_period, car_model, is_featured, status,
         approved_by_admin, is_draft, created_at, updated_at
-      ) VALUES (0,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'approved','disable',?,?)`,
+      ) VALUES (?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'approved','disable',?,?)`,
     )
     .run(
+      input.agent_id,
       input.brand_id,
       input.city_id,
       input.country_id,
@@ -551,12 +656,13 @@ export function updateCar(id: number, input: CarInput): void {
 
   db.prepare(
     `UPDATE cars SET
-      brand_id=?, city_id=?, country_id=?, thumb_image=?, slug=?, features=?, purpose=?,
+      agent_id=?, brand_id=?, city_id=?, country_id=?, thumb_image=?, slug=?, features=?, purpose=?,
       condition=?, regular_price=?, offer_price=?, body_type=?, engine_size=?, drive=?,
       interior_color=?, exterior_color=?, year=?, mileage=?, number_of_owner=?, fuel_type=?,
       transmission=?, seller_type=?, rent_period=?, car_model=?, is_featured=?, status=?, updated_at=?
      WHERE id=?`,
   ).run(
+    input.agent_id,
     input.brand_id,
     input.city_id,
     input.country_id,
@@ -644,4 +750,11 @@ export function getContactInfo() {
     | { phone: string | null; email: string | null; map_code: string | null }
     | undefined
   return row ?? { phone: null, email: null, map_code: null }
+}
+
+/** Slugs and change dates for every publicly visible car — used by the sitemap. */
+export function getPublicCarSlugs(): { slug: string; updated_at: string | null }[] {
+  return getDb()
+    .prepare(`SELECT c.slug, c.updated_at FROM cars c WHERE ${PUBLIC_WHERE} ORDER BY c.created_at DESC`)
+    .all() as unknown as { slug: string; updated_at: string | null }[]
 }
