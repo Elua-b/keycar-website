@@ -19,6 +19,7 @@ export function ImageUploader({ label, hint, multiple = false, value, onChange }
   const inputRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
   const [dragging, setDragging] = useState(false)
 
   async function upload(files: FileList | File[]) {
@@ -27,6 +28,7 @@ export function ImageUploader({ label, hint, multiple = false, value, onChange }
 
     setBusy(true)
     setError("")
+    setSuccess("")
 
     try {
       const body = new FormData()
@@ -37,6 +39,7 @@ export function ImageUploader({ label, hint, multiple = false, value, onChange }
       if (!res.ok || !json.ok || !json.urls) throw new Error(json.error || "Upload failed")
 
       onChange(multiple ? [...value, ...json.urls] : json.urls.slice(0, 1))
+      setSuccess(`${json.urls.length} image${json.urls.length === 1 ? "" : "s"} saved on the server.`)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed")
     } finally {
@@ -94,6 +97,13 @@ export function ImageUploader({ label, hint, multiple = false, value, onChange }
       {error ? (
         <p role="alert" className="mt-2 rounded-xl bg-brand-100 px-4 py-2.5 text-sm font-medium text-brand-700">
           {error}
+        </p>
+      ) : null}
+
+      {success ? (
+        <p role="status" className="mt-2 flex items-center gap-1.5 rounded-xl bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-700">
+          <CheckIcon className="h-4 w-4" />
+          {success}
         </p>
       ) : null}
 
