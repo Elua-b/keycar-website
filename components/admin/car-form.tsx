@@ -8,6 +8,7 @@ import { CheckIcon, CloseIcon, PlusIcon } from "@/components/icons"
 
 export interface CarFormValues {
   id?: number
+  agent_id: string
   title: string
   description: string
   address: string
@@ -43,6 +44,7 @@ interface Props {
   readonly initial: CarFormValues
   readonly brands: { id: number; name: string | null; slug: string }[]
   readonly cities: { id: number; name: string | null; country_id: number }[]
+  readonly dealers: { id: number; name: string | null; email: string | null }[]
   readonly currencyIcon: string
 }
 
@@ -55,7 +57,7 @@ const PURPOSES = ["Sale", "Rent"]
 const RENT_PERIODS = ["day", "week", "month", "year"]
 const SELLER_TYPES = ["Dealer", "Private", "Owner"]
 
-export function CarForm({ mode, initial, brands, cities, currencyIcon }: Props) {
+export function CarForm({ mode, initial, brands, cities, dealers, currencyIcon }: Props) {
   const router = useRouter()
   const [v, setV] = useState<CarFormValues>(initial)
   const [featureDraft, setFeatureDraft] = useState("")
@@ -89,6 +91,7 @@ export function CarForm({ mode, initial, brands, cities, currencyIcon }: Props) 
         body: JSON.stringify({
           ...v,
           id: initial.id,
+          agent_id: Number(v.agent_id || 0),
           brand_id: Number(v.brand_id),
           city_id: Number(v.city_id),
           country_id: Number(v.country_id || 0),
@@ -132,6 +135,20 @@ export function CarForm({ mode, initial, brands, cities, currencyIcon }: Props) 
             onChange={(urls) => set("gallery", urls)}
           />
         </div>
+      </Section>
+
+      {/* ---------- Seller ---------- */}
+      <Section title="Seller" desc="Whose listing this is. It shows on the car page and in their profile.">
+        <Field label="Seller account">
+          <select value={v.agent_id} onChange={(e) => set("agent_id", e.target.value)} className="field">
+            <option value="0">Keycar (house listing)</option>
+            {dealers.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name} {d.email ? `· ${d.email}` : ""}
+              </option>
+            ))}
+          </select>
+        </Field>
       </Section>
 
       {/* ---------- Basics ---------- */}

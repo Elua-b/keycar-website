@@ -32,6 +32,7 @@ export function InquiryForm({ carTitle, carSlug, phone, variant = "card" }: Prop
           name: data.get("name"),
           email: data.get("email"),
           phone: data.get("phone"),
+          subject: data.get("subject"),
           message: data.get("message"),
           carSlug: carSlug ?? null,
         }),
@@ -101,6 +102,21 @@ export function InquiryForm({ carTitle, carSlug, phone, variant = "card" }: Prop
           </label>
           <input id="iq-phone" name="phone" type="tel" maxLength={40} className="field" placeholder="+250 …" />
         </div>
+
+        {carSlug ? null : (
+          <div>
+            <label htmlFor="iq-subject" className="label">
+              Subject <span className="font-normal normal-case text-slate-400">(optional)</span>
+            </label>
+            <input
+              id="iq-subject"
+              name="subject"
+              maxLength={180}
+              className="field"
+              placeholder="Selling my car, partnership, something else…"
+            />
+          </div>
+        )}
 
         <div>
           <label htmlFor="iq-message" className="label">

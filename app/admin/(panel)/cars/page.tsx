@@ -1,11 +1,13 @@
 import Link from "next/link"
 import Image from "next/image"
-import { getAllCarsForAdmin, getCurrency } from "@/lib/db"
+import { getCarsForAdmin, countAwaitingCars, getCurrency, type CarScope } from "@/lib/db"
 import { optimized } from "@/lib/images"
 import { effectivePrice, formatPrice, relativeDate, titleCase } from "@/lib/format"
 import { toggleFeaturedAction, toggleStatusAction } from "@/app/admin/actions"
+import { setCarApprovalAction } from "@/app/admin/manage-actions"
 import { DeleteCarButton } from "@/components/admin/delete-car-button"
-import { CarIcon, EditIcon, EyeIcon, PlusIcon, StarIcon } from "@/components/icons"
+import { FilterChips, StatusPill } from "@/components/admin/page-header"
+import { CarIcon, EditIcon, EyeIcon, PlusIcon, StarIcon, CheckIcon } from "@/components/icons"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "Cars" }
@@ -13,16 +15,26 @@ export const metadata = { title: "Cars" }
 type SP = Record<string, string | string[] | undefined>
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)
 
+const SCOPES: CarScope[] = ["all", "awaiting", "enable", "disable", "featured", "draft"]
+
 export default async function AdminCarsPage({ searchParams }: { searchParams: Promise<SP> }) {
   const sp = await searchParams
-  const statusFilter = one(sp.status)
-  const featuredOnly = one(sp.featured) === "1"
+  const raw = one(sp.scope) ?? "all"
+  const scope = (SCOPES.includes(raw as CarScope) ? raw : "all") as CarScope
 
   const currency = getCurrency()
-  let cars = getAllCarsForAdmin()
+  const cars = getCarsForAdmin(scope)
+  const all = scope === "all" ? cars : getCarsForAdmin("all")
+  const awaiting = countAwaitingCars()
 
-  if (statusFilter) cars = cars.filter((c) => c.status === statusFilter)
-  if (featuredOnly) cars = cars.filter((c) => c.is_featured === "enable")
+  const scopeLabel = {
+    all: "",
+    awaiting: " · awaiting approval",
+    enable: " · published",
+    disable: " · hidden",
+    featured: " · featured",
+    draft: " · drafts",
+  }[scope]
 
   return (
     <div className="space-y-7">
@@ -31,8 +43,7 @@ export default async function AdminCarsPage({ searchParams }: { searchParams: Pr
           <h1 className="text-3xl font-extrabold tracking-tight text-brand-900">Cars</h1>
           <p className="mt-1.5 text-slate-600">
             {cars.length} {cars.length === 1 ? "car" : "cars"}
-            {statusFilter ? ` · ${statusFilter === "enable" ? "published" : "hidden"}` : ""}
-            {featuredOnly ? " · featured" : ""}
+            {scopeLabel}
           </p>
         </div>
         <Link href="/admin/cars/new" className="btn-primary">
@@ -41,21 +52,37 @@ export default async function AdminCarsPage({ searchParams }: { searchParams: Pr
         </Link>
       </header>
 
-      {/* Filter chips */}
-      <div className="flex flex-wrap gap-2">
-        <Link href="/admin/cars" className={`chip ${!statusFilter && !featuredOnly ? "chip-active" : ""}`}>
-          All
-        </Link>
-        <Link href="/admin/cars?status=enable" className={`chip ${statusFilter === "enable" ? "chip-active" : ""}`}>
-          Published
-        </Link>
-        <Link href="/admin/cars?status=disable" className={`chip ${statusFilter === "disable" ? "chip-active" : ""}`}>
-          Hidden
-        </Link>
-        <Link href="/admin/cars?featured=1" className={`chip ${featuredOnly ? "chip-active" : ""}`}>
-          Featured
-        </Link>
-      </div>
+      <FilterChips
+        active={scope}
+        options={[
+          { key: "all", label: "All", count: all.length, href: "/admin/cars" },
+          { key: "awaiting", label: "Awaiting approval", count: awaiting, href: "/admin/cars?scope=awaiting" },
+          {
+            key: "enable",
+            label: "Published",
+            count: all.filter((c) => c.status === "enable" && c.is_draft === "disable").length,
+            href: "/admin/cars?scope=enable",
+          },
+          {
+            key: "disable",
+            label: "Hidden",
+            count: all.filter((c) => c.status === "disable" && c.is_draft === "disable").length,
+            href: "/admin/cars?scope=disable",
+          },
+          {
+            key: "featured",
+            label: "Featured",
+            count: all.filter((c) => c.is_featured === "enable").length,
+            href: "/admin/cars?scope=featured",
+          },
+          {
+            key: "draft",
+            label: "Drafts",
+            count: all.filter((c) => c.is_draft === "enable").length,
+            href: "/admin/cars?scope=draft",
+          },
+        ]}
+      />
 
       {cars.length ? (
         <div className="card overflow-hidden">
@@ -66,6 +93,7 @@ export default async function AdminCarsPage({ searchParams }: { searchParams: Pr
                 <tr>
                   <th className="px-6 py-3.5 font-semibold">Car</th>
                   <th className="px-4 py-3.5 font-semibold">Brand</th>
+                  <th className="px-4 py-3.5 font-semibold">Seller</th>
                   <th className="px-4 py-3.5 font-semibold">Price</th>
                   <th className="px-4 py-3.5 font-semibold">Type</th>
                   <th className="px-4 py-3.5 font-semibold">Views</th>
@@ -99,6 +127,15 @@ export default async function AdminCarsPage({ searchParams }: { searchParams: Pr
                       </div>
                     </td>
                     <td className="px-4 py-4 text-slate-600">{car.brand_name ?? "—"}</td>
+                    <td className="px-4 py-4">
+                      {car.agent_id ? (
+                        <Link href={`/admin/users/${car.agent_id}`} className="text-slate-600 hover:text-brand-500">
+                          {car.agent_name ?? `#${car.agent_id}`}
+                        </Link>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </td>
                     <td className="px-4 py-4 font-semibold text-brand-900">
                       {formatPrice(effectivePrice(car), currency)}
                     </td>
@@ -113,6 +150,7 @@ export default async function AdminCarsPage({ searchParams }: { searchParams: Pr
                         >
                           {car.status === "enable" ? "Live" : "Hidden"}
                         </span>
+                        {car.approved_by_admin !== "approved" ? <StatusPill tone="warn">Awaiting</StatusPill> : null}
                         {car.is_featured === "enable" ? (
                           <span className="rounded-pill bg-brand-900 px-2.5 py-1 text-[11px] font-bold uppercase text-white">
                             Featured
@@ -184,15 +222,15 @@ export default async function AdminCarsPage({ searchParams }: { searchParams: Pr
             <CarIcon className="h-8 w-8" />
           </span>
           <h2 className="mt-6 text-xl font-bold text-brand-900">
-            {statusFilter || featuredOnly ? "Nothing matches this filter" : "No cars yet"}
+            {scope !== "all" ? "Nothing matches this filter" : "No cars yet"}
           </h2>
           <p className="mx-auto mt-3 max-w-sm text-slate-600">
-            {statusFilter || featuredOnly
+            {scope !== "all"
               ? "Try a different filter."
               : "Add your first car and it will appear on the website straight away."}
           </p>
-          <Link href={statusFilter || featuredOnly ? "/admin/cars" : "/admin/cars/new"} className="btn-primary mt-8">
-            {statusFilter || featuredOnly ? "Show all cars" : "Add a car"}
+          <Link href={scope !== "all" ? "/admin/cars" : "/admin/cars/new"} className="btn-primary mt-8">
+            {scope !== "all" ? "Show all cars" : "Add a car"}
           </Link>
         </div>
       )}
@@ -203,13 +241,33 @@ export default async function AdminCarsPage({ searchParams }: { searchParams: Pr
 function ActionButtons({
   car,
 }: {
-  readonly car: { id: number; slug: string; status: string; is_featured: string; title: string }
+  readonly car: {
+    id: number
+    slug: string
+    status: string
+    is_featured: string
+    approved_by_admin: string
+    title: string
+  }
 }) {
   const iconBtn =
     "grid h-9 w-9 place-items-center rounded-xl border border-brand-200 text-brand-900 transition-colors hover:border-brand-500 hover:bg-brand-500 hover:text-white"
 
   return (
     <>
+      {car.approved_by_admin !== "approved" ? (
+        <form action={setCarApprovalAction}>
+          <input type="hidden" name="id" value={car.id} />
+          <input type="hidden" name="next" value="1" />
+          <button
+            type="submit"
+            title="Approve and publish"
+            className="grid h-9 w-9 place-items-center rounded-xl border border-brand-500 bg-brand-500 text-white transition-colors hover:bg-brand-600"
+          >
+            <CheckIcon className="h-4 w-4" />
+          </button>
+        </form>
+      ) : null}
       <Link href={`/listing/${car.slug}`} target="_blank" className={iconBtn} title="View on site">
         <EyeIcon className="h-4 w-4" />
       </Link>
