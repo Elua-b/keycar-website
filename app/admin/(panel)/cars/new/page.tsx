@@ -34,6 +34,7 @@ export default function NewCarPage() {
     year: "",
     mileage: "",
     number_of_owner: "",
+    seats: "",
     fuel_type: "",
     transmission: "",
     seller_type: "",

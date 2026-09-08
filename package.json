@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "create-admin": "node scripts/create-admin.mjs",
-    "init-db": "node scripts/init-sqlite.mjs"
+    "init-db": "node scripts/init-sqlite.mjs",
+    "seed-cars": "node scripts/seed-cars.mjs"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",

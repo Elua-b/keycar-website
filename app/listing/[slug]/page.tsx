@@ -29,6 +29,7 @@ import {
   PinIcon,
   ShieldIcon,
   TagIcon,
+  UsersIcon,
 } from "@/components/icons"
 
 export const dynamic = "force-dynamic"
@@ -83,6 +84,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
     { icon: PaletteIcon, label: "Exterior colour", value: car.exterior_color },
     { icon: PaletteIcon, label: "Interior colour", value: car.interior_color },
     { icon: ShieldIcon, label: "Condition", value: titleCase(car.condition) },
+    { icon: UsersIcon, label: "Seats", value: car.seats ? `${car.seats} seats` : null },
     { icon: EyeIcon, label: "Previous owners", value: car.number_of_owner },
     { icon: TagIcon, label: "Model", value: car.car_model },
   ].filter((s) => s.value)
@@ -230,11 +232,11 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
             <div className="sticky top-24 space-y-6">
               <div className="card p-7">
                 <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
-                  {car.purpose === "Rent" ? "Rental price" : "Asking price"}
+                  {car.purpose?.toLowerCase() === "rent" ? "Rental price" : "Asking price"}
                 </p>
                 <div className="mt-2 flex flex-wrap items-end gap-3">
                   <p className="text-4xl font-extrabold text-brand-900">{formatPrice(price, currency)}</p>
-                  {car.purpose === "Rent" && car.rent_period ? (
+                  {car.purpose?.toLowerCase() === "rent" && car.rent_period ? (
                     <span className="pb-1 text-sm font-medium text-slate-500">/ {car.rent_period}</span>
                   ) : null}
                 </div>

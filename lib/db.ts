@@ -62,6 +62,7 @@ export interface Car {
   year: string | null
   mileage: string | null
   number_of_owner: string | null
+  seats: string | null
   fuel_type: string | null
   transmission: string | null
   seller_type: string | null
@@ -557,6 +558,7 @@ export interface CarInput {
   year: string | null
   mileage: string | null
   number_of_owner: string | null
+  seats: string | null
   fuel_type: string | null
   transmission: string | null
   seller_type: string | null
@@ -598,10 +600,10 @@ export function createCar(input: CarInput): number {
       `INSERT INTO cars (
         agent_id, brand_id, city_id, country_id, thumb_image, slug, features, purpose,
         condition, total_view, regular_price, offer_price, body_type, engine_size, drive,
-        interior_color, exterior_color, year, mileage, number_of_owner, fuel_type,
+        interior_color, exterior_color, year, mileage, number_of_owner, seats, fuel_type,
         transmission, seller_type, rent_period, car_model, is_featured, status,
         approved_by_admin, is_draft, created_at, updated_at
-      ) VALUES (?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'approved','disable',?,?)`,
+      ) VALUES (?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'approved','disable',?,?)`,
     )
     .run(
       input.agent_id,
@@ -623,6 +625,7 @@ export function createCar(input: CarInput): number {
       input.year,
       input.mileage,
       input.number_of_owner,
+      input.seats,
       input.fuel_type,
       input.transmission,
       input.seller_type,
@@ -658,7 +661,7 @@ export function updateCar(id: number, input: CarInput): void {
     `UPDATE cars SET
       agent_id=?, brand_id=?, city_id=?, country_id=?, thumb_image=?, slug=?, features=?, purpose=?,
       condition=?, regular_price=?, offer_price=?, body_type=?, engine_size=?, drive=?,
-      interior_color=?, exterior_color=?, year=?, mileage=?, number_of_owner=?, fuel_type=?,
+      interior_color=?, exterior_color=?, year=?, mileage=?, number_of_owner=?, seats=?, fuel_type=?,
       transmission=?, seller_type=?, rent_period=?, car_model=?, is_featured=?, status=?, updated_at=?
      WHERE id=?`,
   ).run(
@@ -681,6 +684,7 @@ export function updateCar(id: number, input: CarInput): void {
     input.year,
     input.mileage,
     input.number_of_owner,
+    input.seats,
     input.fuel_type,
     input.transmission,
     input.seller_type,

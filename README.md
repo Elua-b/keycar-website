@@ -99,6 +99,23 @@ Two deliberate departures from Laravel:
   No SMTP credentials are wired up here, so those points are no-ops; the
   "email a copy" toggle is off and labelled as such.
 
+## Replacing the inventory
+
+`scripts/seed-cars.mjs` wipes every car and re-inserts the real stock list held
+at the top of that file. Edit the `INVENTORY` array to change what gets loaded.
+
+```bash
+npm run seed-cars            # dry run — reports what it would delete, changes nothing
+npm run seed-cars -- --yes   # actually apply
+```
+
+It deletes `cars`, `car_translations`, `car_galleries`, `reviews` and `wishlists`,
+then inserts the list. Brands and cities that don't exist yet are created. Customer
+messages in `car_inquiries` are left alone — those are real leads.
+
+Every listing is inserted published, unfeatured, and with `/placeholder.svg` as its
+photo; add real images from **Admin → Cars → Edit → Photos**.
+
 ## Colours
 
 Blue and white only, taken from the Laravel stylesheet:
@@ -156,6 +173,7 @@ lib/
   format.ts                   price, mileage, features, relative dates
 scripts/
   init-sqlite.mjs             schema + sample data (npm run init-db)
+  seed-cars.mjs               replace the whole inventory with the real stock list (npm run seed-cars)
   create-admin.mjs            create or reset an admin account
 proxy.ts                      optimistic redirect for /admin/*
 ```

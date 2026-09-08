@@ -67,7 +67,7 @@ db.exec(`
     total_view INTEGER DEFAULT 0, regular_price REAL, offer_price REAL,
     video_id TEXT, video_image TEXT, google_map TEXT,
     body_type TEXT, engine_size TEXT, drive TEXT, interior_color TEXT, exterior_color TEXT,
-    year TEXT, mileage TEXT, number_of_owner TEXT, fuel_type TEXT, transmission TEXT,
+    year TEXT, mileage TEXT, number_of_owner TEXT, seats TEXT, fuel_type TEXT, transmission TEXT,
     seller_type TEXT, expired_date TEXT, rent_period TEXT, car_model TEXT,
     is_featured TEXT DEFAULT 'disable', status TEXT DEFAULT 'enable',
     approved_by_admin TEXT DEFAULT 'approved', is_draft TEXT DEFAULT 'disable',
@@ -184,6 +184,7 @@ function ensureColumn(table, column, definition) {
 }
 
 const added = [
+  ensureColumn("cars", "seats", "TEXT") && "cars.seats",
   ensureColumn("users", "kyc_status", "TEXT DEFAULT 'pending'") && "users.kyc_status",
   ensureColumn("car_inquiries", "subject", "TEXT") && "car_inquiries.subject",
   ensureColumn("settings", "contact_message_mail", "TEXT") && "settings.contact_message_mail",
