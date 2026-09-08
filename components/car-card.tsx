@@ -3,7 +3,7 @@ import Link from "next/link"
 import type { Car } from "@/lib/db"
 import { optimized } from "@/lib/images"
 import { type Currency, DEFAULT_CURRENCY, effectivePrice, formatPrice, hasDiscount, discountPercent, formatMileage, titleCase } from "@/lib/format"
-import { CalendarIcon, FuelIcon, GaugeIcon, GearIcon, PinIcon } from "./icons"
+import { CalendarIcon, FuelIcon, GaugeIcon, GearIcon, PinIcon, UsersIcon } from "./icons"
 
 interface Props {
   readonly car: Car
@@ -20,10 +20,11 @@ export function CarCard({ car, currency = DEFAULT_CURRENCY, priority = false }: 
     car.mileage ? { icon: GaugeIcon, label: formatMileage(car.mileage) } : null,
     car.fuel_type ? { icon: FuelIcon, label: titleCase(car.fuel_type) } : null,
     car.transmission ? { icon: GearIcon, label: titleCase(car.transmission) } : null,
+    car.seats ? { icon: UsersIcon, label: `${car.seats} seats` } : null,
   ].filter(Boolean) as { icon: typeof CalendarIcon; label: string }[]
 
   return (
-    <article className="card group overflow-hidden hover:-translate-y-1 hover:shadow-card-hover">
+    <article className="card group flex h-full flex-col overflow-hidden hover:-translate-y-1 hover:shadow-card-hover">
       <Link href={`/listing/${car.slug}`} className="block">
         <div className="relative aspect-[16/11] overflow-hidden bg-brand-100">
           <Image
@@ -56,7 +57,7 @@ export function CarCard({ car, currency = DEFAULT_CURRENCY, priority = false }: 
         </div>
       </Link>
 
-      <div className="p-5">
+      <div className="flex flex-1 flex-col p-5">
         <div className="mb-2 flex items-center gap-2 text-xs font-medium text-slate-500">
           {car.brand_name ? <span className="text-brand-500">{car.brand_name}</span> : null}
           {car.city_name ? (
@@ -77,7 +78,7 @@ export function CarCard({ car, currency = DEFAULT_CURRENCY, priority = false }: 
         </h3>
 
         {specs.length ? (
-          <ul className="mb-5 grid grid-cols-2 gap-x-3 gap-y-2.5 border-t border-brand-200/70 pt-4 text-xs text-slate-600">
+          <ul className="mb-5 grid shrink-0 grid-cols-2 gap-x-3 gap-y-2.5 border-t border-brand-200/70 pt-4 text-xs text-slate-600">
             {specs.map((s) => (
               <li key={s.label} className="flex items-center gap-2">
                 <s.icon className="h-4 w-4 shrink-0 text-brand-400" />
@@ -87,14 +88,14 @@ export function CarCard({ car, currency = DEFAULT_CURRENCY, priority = false }: 
           </ul>
         ) : null}
 
-        <div className="flex items-end justify-between gap-3">
+        <div className="mt-auto flex items-end justify-between gap-3">
           <div>
             {discounted ? (
               <p className="text-xs text-slate-400 line-through">{formatPrice(car.regular_price, currency)}</p>
             ) : null}
             <p className="text-xl font-extrabold text-brand-900">
               {formatPrice(price, currency)}
-              {car.purpose === "Rent" && car.rent_period ? (
+              {car.purpose?.toLowerCase() === "rent" && car.rent_period ? (
                 <span className="ml-1 text-xs font-medium text-slate-500">/{car.rent_period}</span>
               ) : null}
             </p>

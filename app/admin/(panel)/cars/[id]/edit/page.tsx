@@ -46,6 +46,7 @@ export default async function EditCarPage({ params }: { params: Promise<{ id: st
     year: s(car.year),
     mileage: s(car.mileage),
     number_of_owner: s(car.number_of_owner),
+    seats: s(car.seats),
     fuel_type: s(car.fuel_type),
     transmission: s(car.transmission),
     seller_type: s(car.seller_type),

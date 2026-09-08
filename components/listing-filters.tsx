@@ -68,7 +68,8 @@ export function ListingFilters(props: Props) {
             </Chip>
             {props.purposes.map((p) => (
               <Chip key={p} active={get("purpose") === p} onClick={() => apply({ purpose: p })}>
-                {p}
+                {/* Stored lowercase ("sale"/"rent"); shown capitalised. */}
+                {p.charAt(0).toUpperCase() + p.slice(1)}
               </Chip>
             ))}
           </div>

@@ -72,6 +72,7 @@ function parseBody(body: Record<string, unknown>): { input?: CarInput; error?: s
       year: str(body.year, 10),
       mileage: str(body.mileage, 40),
       number_of_owner: str(body.number_of_owner, 20),
+      seats: str(body.seats, 10),
       fuel_type: str(body.fuel_type, 40),
       transmission: str(body.transmission, 40),
       seller_type: str(body.seller_type, 40),

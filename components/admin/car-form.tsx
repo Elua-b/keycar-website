@@ -28,6 +28,7 @@ export interface CarFormValues {
   year: string
   mileage: string
   number_of_owner: string
+  seats: string
   fuel_type: string
   transmission: string
   seller_type: string
@@ -55,6 +56,7 @@ const DRIVES = ["2WD", "4WD", "AWD", "FWD", "RWD"]
 const CONDITIONS = ["new", "used", "certified"]
 const PURPOSES = ["Sale", "Rent"]
 const RENT_PERIODS = ["day", "week", "month", "year"]
+const SEAT_COUNTS = ["2", "4", "5", "7", "8", "9", "12", "14", "16"]
 const SELLER_TYPES = ["Dealer", "Private", "Owner"]
 
 export function CarForm({ mode, initial, brands, cities, dealers, currencyIcon }: Props) {
@@ -378,6 +380,17 @@ export function CarForm({ mode, initial, brands, cities, dealers, currencyIcon }
               placeholder="Black"
               className="field"
             />
+          </Field>
+
+          <Field label="Seats">
+            <select value={v.seats} onChange={(e) => set("seats", e.target.value)} className="field">
+              <option value="">Not specified</option>
+              {SEAT_COUNTS.map((n) => (
+                <option key={n} value={n}>
+                  {n} seats
+                </option>
+              ))}
+            </select>
           </Field>
 
           <Field label="Previous owners">
