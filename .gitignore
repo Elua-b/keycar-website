@@ -34,3 +34,6 @@ branch_structure.json
 
 # local sqlite database
 /data
+
+# Master video/photo originals — too large to commit; keep local only.
+/media

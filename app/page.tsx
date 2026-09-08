@@ -6,6 +6,7 @@ import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { CarCard } from "@/components/car-card"
 import { HeroSearch } from "@/components/hero-search"
+import { HeroVideo } from "@/components/hero-video"
 import { ArrowRightIcon, CarIcon, CheckIcon, PaletteIcon, ShieldIcon, TagIcon, UsersIcon } from "@/components/icons"
 
 // Inventory changes from the admin dashboard, so render per request.
@@ -35,49 +36,62 @@ export default function HomePage() {
           className="absolute -right-40 -top-40 h-[34rem] w-[34rem] rounded-full bg-brand-500/30 blur-3xl"
           aria-hidden
         />
-        <div className="container relative py-20 lg:py-28">
-          <div className="max-w-3xl">
-            <p className="animate-in-fade inline-flex items-center gap-2 rounded-pill border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-white backdrop-blur">
-              <span className="h-1.5 w-1.5 rounded-full bg-white" aria-hidden />
-              {stats.cars} verified {stats.cars === 1 ? "car" : "cars"} in Kigali
-            </p>
+        <div className="container relative py-20 lg:py-24">
+          {/* Two columns so the vertically-shot intro video keeps its 9:16
+              frame instead of being cropped into a letterbox. */}
+          <div className="grid items-center gap-12 lg:grid-cols-[1fr_22rem] lg:gap-16">
+            <div>
+              <p className="animate-in-fade inline-flex items-center gap-2 rounded-pill border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-white backdrop-blur">
+                <span className="h-1.5 w-1.5 rounded-full bg-white" aria-hidden />
+                {stats.cars} verified {stats.cars === 1 ? "car" : "cars"} in Kigali
+              </p>
 
-            <h1 className="animate-in-up mt-6 text-4xl font-extrabold leading-[1.08] tracking-tight text-white sm:text-5xl lg:text-6xl">
-              Find a car you can
-              <br />
-              <span className="text-brand-300">actually trust.</span>
-            </h1>
+              <h1 className="animate-in-up mt-6 text-4xl font-extrabold leading-[1.08] tracking-tight text-white sm:text-5xl lg:text-6xl">
+                Find a car you can
+                <br />
+                <span className="text-brand-300">actually trust.</span>
+              </h1>
 
-            <p className="animate-in-up mt-6 max-w-xl text-lg leading-relaxed text-white/80">
-              Browse cars for sale and rent across Rwanda. Real specs, honest prices, and every listing checked
-              before it goes live.
-            </p>
+              <p className="animate-in-up mt-6 max-w-xl text-lg leading-relaxed text-white/80">
+                Browse cars for sale and rent across Rwanda. Real specs, honest prices, and every listing checked
+                before it goes live.
+              </p>
+
+              <dl className="mt-10 grid max-w-2xl grid-cols-2 gap-6 sm:grid-cols-4">
+                {[
+                  { label: "Cars listed", value: stats.cars, icon: CarIcon },
+                  { label: "Brands", value: stats.brands, icon: TagIcon },
+                  { label: "Cities", value: stats.cities, icon: PaletteIcon },
+                  { label: "Verified sellers", value: stats.dealers || "—", icon: UsersIcon },
+                ].map((s) => (
+                  <div key={s.label}>
+                    <dt className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-white/60">
+                      <s.icon className="h-4 w-4" />
+                      {s.label}
+                    </dt>
+                    <dd className="mt-1.5 text-3xl font-extrabold text-white">{s.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+
+            <div className="animate-in-up">
+              <HeroVideo
+                src="/keycar-intro.mp4"
+                poster="/keycar-intro-poster.jpg"
+                label="Watch our intro"
+                caption="Hear how Keycar keeps every listing honest."
+              />
+            </div>
           </div>
 
-          <div className="animate-in-up mt-12">
+          <div className="animate-in-up mt-14">
             <HeroSearch
               brands={brands.map((b) => ({ slug: b.slug, name: b.name }))}
               bodyTypes={options.bodyTypes}
               purposes={options.purposes}
             />
           </div>
-
-          <dl className="mt-14 grid max-w-3xl grid-cols-2 gap-6 sm:grid-cols-4">
-            {[
-              { label: "Cars listed", value: stats.cars, icon: CarIcon },
-              { label: "Brands", value: stats.brands, icon: TagIcon },
-              { label: "Cities", value: stats.cities, icon: PaletteIcon },
-              { label: "Happy buyers", value: "100+", icon: UsersIcon },
-            ].map((s) => (
-              <div key={s.label}>
-                <dt className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-white/60">
-                  <s.icon className="h-4 w-4" />
-                  {s.label}
-                </dt>
-                <dd className="mt-1.5 text-3xl font-extrabold text-white">{s.value}</dd>
-              </div>
-            ))}
-          </dl>
         </div>
       </section>
 
