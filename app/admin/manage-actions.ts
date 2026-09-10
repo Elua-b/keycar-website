@@ -17,6 +17,7 @@ import {
 } from "@/lib/blog"
 import { createCountry, updateCountry, deleteCountry, createCity, updateCity, deleteCity } from "@/lib/locations"
 import { setReviewStatus, deleteReview } from "@/lib/reviews"
+import { createBrand, updateBrand, deleteBrand, setBrandStatus } from "@/lib/brands"
 
 /**
  * Server actions for the six admin areas ported from Laravel. Each one is the
@@ -33,6 +34,52 @@ const flag = (fd: FormData, key: string) => fd.get(key) === "on" || fd.get(key) 
 
 function back(path: string, error?: string): never {
   redirect(error ? `${path}?error=${encodeURIComponent(error)}` : path)
+}
+
+/* ------------------------------------------------------------------ */
+/* Brands                                                             */
+/* ------------------------------------------------------------------ */
+
+export async function saveBrandAction(formData: FormData): Promise<void> {
+  await requireAdmin()
+  const name = text(formData, "name", 120)
+  const image = text(formData, "image", 500) || null
+  const status = flag(formData, "status") ? "enable" : "disable"
+  const brandId = id(formData)
+
+  const result =
+    Number.isFinite(brandId) && brandId > 0
+      ? updateBrand(brandId, { name, image, status })
+      : createBrand({ name, image, status })
+
+  revalidatePath("/admin/brands")
+  revalidatePath("/")
+  revalidatePath("/listings")
+  back("/admin/brands", result.ok ? undefined : result.error)
+}
+
+export async function deleteBrandAction(formData: FormData): Promise<void> {
+  await requireAdmin()
+  const brandId = id(formData)
+  if (!Number.isFinite(brandId)) return
+
+  const result = deleteBrand(brandId)
+  revalidatePath("/admin/brands")
+  revalidatePath("/")
+  revalidatePath("/listings")
+  back("/admin/brands", result.ok ? undefined : result.error)
+}
+
+export async function toggleBrandStatusAction(formData: FormData): Promise<void> {
+  await requireAdmin()
+  const brandId = id(formData)
+  if (!Number.isFinite(brandId)) return
+
+  setBrandStatus(brandId, String(formData.get("next") ?? "enable"))
+  revalidatePath("/admin/brands")
+  revalidatePath("/")
+  revalidatePath("/listings")
+  back("/admin/brands")
 }
 
 /* ------------------------------------------------------------------ */
