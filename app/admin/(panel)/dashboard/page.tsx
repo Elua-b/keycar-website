@@ -2,26 +2,14 @@ import Link from "next/link"
 import Image from "next/image"
 import { getAdminStats, getAllCarsForAdmin, getCurrency, countAwaitingCars } from "@/lib/db"
 import { getInquiries } from "@/lib/inquiries"
+import { countBrands } from "@/lib/brands"
 import { countUsers } from "@/lib/users"
 import { countPendingKyc } from "@/lib/kyc"
 import { countPendingComments } from "@/lib/blog"
 import { countPendingReviews } from "@/lib/reviews"
 import { optimized } from "@/lib/images"
 import { effectivePrice, formatPrice, relativeDate } from "@/lib/format"
-import {
-  CarIcon,
-  EyeIcon,
-  MailIcon,
-  PlusIcon,
-  StarIcon,
-  TagIcon,
-  ArrowRightIcon,
-  UploadIcon,
-  UsersIcon,
-  IdCardIcon,
-  ChatIcon,
-  CheckIcon,
-} from "@/components/icons"
+import { ArrowRightIcon, CarIcon, ChatIcon, CheckIcon, EyeIcon, GlobeIcon, IdCardIcon, MailIcon, PlusIcon, StarIcon, TagIcon, UploadIcon, UsersIcon } from "@/components/icons"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "Overview" }
@@ -34,11 +22,13 @@ export default function AdminDashboardPage() {
 
   const users = countUsers()
 
+  const brandCounts = countBrands()
+
   const tiles = [
     { label: "Total cars", value: stats.totalCars, icon: CarIcon, href: "/admin/cars" },
     { label: "Published", value: stats.published, icon: TagIcon, href: "/admin/cars?scope=enable" },
     { label: "Featured", value: stats.featured, icon: StarIcon, href: "/admin/cars?scope=featured" },
-    { label: "Total views", value: stats.views, icon: EyeIcon, href: "/admin/cars" },
+    { label: "Brands", value: brandCounts.total, icon: GlobeIcon, href: "/admin/brands" },
   ]
 
   // Anything sitting in a queue, so the first screen says what needs a decision.
@@ -48,6 +38,7 @@ export default function AdminDashboardPage() {
     { label: "KYC to review", value: countPendingKyc(), icon: IdCardIcon, href: "/admin/kyc?status=0" },
     { label: "Reviews to approve", value: countPendingReviews(), icon: StarIcon, href: "/admin/reviews?status=pending" },
     { label: "Comments to moderate", value: countPendingComments(), icon: ChatIcon, href: "/admin/blog/comments?status=0" },
+    { label: "Brands missing a logo", value: brandCounts.withoutImage, icon: GlobeIcon, href: "/admin/brands" },
   ].filter((q) => q.value > 0)
 
   return (

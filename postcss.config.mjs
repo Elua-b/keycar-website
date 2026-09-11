@@ -1,7 +1,3 @@
-import { createRequire } from 'module';
-
-const require = createRequire(import.meta.url);
-
 // Keep this file exactly this short. Next.js executes it on every dev run and
 // build, which made it a hiding place once before: the version inherited from
 // the previous project had an obfuscated payload appended after this config,

@@ -5,21 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { logoutAction } from "@/app/admin/actions"
-import {
-  CarIcon,
-  DashboardIcon,
-  MailIcon,
-  MenuIcon,
-  CloseIcon,
-  LogoutIcon,
-  EyeIcon,
-  PlusIcon,
-  UsersIcon,
-  IdCardIcon,
-  NewspaperIcon,
-  GlobeIcon,
-  StarIcon,
-} from "@/components/icons"
+import { CarIcon, CloseIcon, DashboardIcon, EyeIcon, GlobeIcon, IdCardIcon, LogoutIcon, MailIcon, MenuIcon, NewspaperIcon, PlusIcon, StarIcon, TagIcon, UsersIcon } from "@/components/icons"
 
 export interface NavCounts {
   /** Unread contact/inquiry messages. */
@@ -59,6 +45,7 @@ export function AdminShell({ admin, counts, children }: Props) {
       heading: "Inventory",
       items: [
         { href: "/admin/cars", label: "Cars", icon: CarIcon, count: counts.awaitingCars },
+        { href: "/admin/brands", label: "Brands", icon: TagIcon },
         { href: "/admin/reviews", label: "Reviews", icon: StarIcon, count: counts.pendingReviews },
         { href: "/admin/locations", label: "Locations", icon: GlobeIcon },
       ],
