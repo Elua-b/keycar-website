@@ -157,14 +157,19 @@ export interface DealerRow {
 const PUBLIC_CARS = `c.status = 'enable' AND c.approved_by_admin = 'approved' AND c.is_draft = 'disable'`
 
 /**
- * Exactly the conditions Laravel's HomeController@dealers used. `status` is
- * 'enable' here, not 'active' — User::STATUS_ACTIVE is the string 'enable'.
+ * Which sellers are publicly visible.
+ *
+ * Laravel also required `email_verified_at IS NOT NULL`, but that condition
+ * cannot be met here: this stack has no email-verification flow, so nothing
+ * ever populates the column, and on a database created by `init-db` it was
+ * added empty. Keeping it hid every dealer. The remaining three checks are
+ * the ones the admin panel actually maintains, and they match what the
+ * website's own getDealers() treats as visible.
  */
 const PUBLIC_DEALER = `
   u.is_dealer = 1
   AND u.status = 'enable'
   AND u.is_banned = 'no'
-  AND u.email_verified_at IS NOT NULL
 `
 
 export function getDealerRows(opts: { username?: string; limit?: number; offset?: number } = {}): DealerRow[] {

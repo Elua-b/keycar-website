@@ -67,7 +67,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
               u.is_banned, u.is_dealer, u.address, u.email, u.phone, u.kyc_status, u.created_at
        FROM users u
        WHERE u.id = ? AND u.is_dealer = 1 AND u.status = 'enable'
-         AND u.is_banned = 'no' AND u.email_verified_at IS NOT NULL
+         AND u.is_banned = 'no'
        LIMIT 1`,
     )
     .get(car.agent_id) as Record<string, unknown> | undefined
