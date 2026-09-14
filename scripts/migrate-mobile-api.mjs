@@ -15,27 +15,59 @@
  */
 
 import { DatabaseSync } from "node:sqlite"
-import { readFileSync } from "node:fs"
+import { readFileSync, existsSync } from "node:fs"
 import { resolve } from "node:path"
 
-function loadEnv() {
+/**
+ * Reads one env file, without overwriting anything already in the environment.
+ * Files are loaded in Next's precedence order, so whichever is read first wins.
+ */
+function loadEnvFile(name) {
   try {
-    const raw = readFileSync(new URL("../.env", import.meta.url), "utf8")
+    const raw = readFileSync(new URL(`../${name}`, import.meta.url), "utf8")
     for (const line of raw.split("\n")) {
       const m = /^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/.exec(line)
       if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^["']|["']$/g, "")
     }
   } catch {
-    // .env is optional if the vars are already exported
+    // Each file is optional; the vars may already be exported.
   }
+}
+
+/**
+ * Same order Next.js uses: `.env.local` overrides `.env`. A deploy that keeps
+ * DATABASE_PATH in `.env.local` would otherwise migrate the wrong database —
+ * or none at all — while reporting success.
+ */
+function loadEnv() {
+  loadEnvFile(".env.local")
+  loadEnvFile(".env")
 }
 
 loadEnv()
 
 const args = process.argv.slice(2)
 const dryRun = args.includes("--dry-run")
+const allowCreate = args.includes("--create")
 const pathArg = args.find((a) => !a.startsWith("--"))
 const dbPath = resolve(pathArg || process.env.DATABASE_PATH || "data/keycar.sqlite")
+
+/**
+ * Refuse to migrate a database that isn't there.
+ *
+ * node:sqlite creates the file on open, so a stale or misspelled
+ * DATABASE_PATH would otherwise produce an empty database, migrate it
+ * happily, and report success — while the real one stayed untouched and the
+ * site served nothing. Pass --create only when a new file is genuinely wanted.
+ */
+if (!existsSync(dbPath) && !allowCreate) {
+  console.error(`No database at ${dbPath}`)
+  console.error(
+    "\nCheck DATABASE_PATH in .env.local / .env, or pass the path as an argument.\n" +
+      "If you really do want to create a new empty database here, re-run with --create.",
+  )
+  process.exit(1)
+}
 
 const db = new DatabaseSync(dbPath)
 db.exec("PRAGMA journal_mode = WAL")
