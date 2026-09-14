@@ -9,6 +9,7 @@
     "lint": "next lint",
     "create-admin": "node scripts/create-admin.mjs",
     "init-db": "node scripts/init-sqlite.mjs",
+    "migrate-mobile-api": "node scripts/migrate-mobile-api.mjs",
     "seed-cars": "node scripts/seed-cars.mjs"
   },
   "dependencies": {
