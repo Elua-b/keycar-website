@@ -89,7 +89,9 @@ function stringifyNumerics(row: Record<string, unknown>): Record<string, unknown
   const out = { ...row }
   for (const field of STRING_FIELDS) {
     const value = out[field]
-    if (value !== null && value !== undefined && typeof value !== "string") {
+    // Only numeric columns need coercing. Narrowing to number/bigint avoids
+    // stringifying anything else into "[object Object]".
+    if (typeof value === "number" || typeof value === "bigint") {
       out[field] = String(value)
     }
   }
@@ -172,9 +174,15 @@ const PUBLIC_DEALER = `
   AND u.is_banned = 'no'
 `
 
+/**
+ * `username` may be blank: the column only exists here because the mobile
+ * migration added it, and nothing in the admin panel populates it. Look the
+ * dealer up by username OR numeric id so profiles stay reachable either way —
+ * dealerOut() emits the id as the identifier when the username is empty.
+ */
 export function getDealerRows(opts: { username?: string; limit?: number; offset?: number } = {}): DealerRow[] {
-  const where = opts.username ? "AND u.username = ?" : ""
-  const params: (string | number)[] = opts.username ? [opts.username] : []
+  const where = opts.username ? "AND (u.username = ? OR u.id = ?)" : ""
+  const params: (string | number)[] = opts.username ? [opts.username, Number(opts.username) || -1] : []
   const limit = opts.limit ?? 50
   const offset = opts.offset ?? 0
 
@@ -202,7 +210,9 @@ export function dealerOut(dealer: DealerRow, origin: string): Record<string, unk
   return {
     id: dealer.id,
     name: dealer.name ?? "",
-    username: dealer.username ?? "",
+    // The app routes to /api/dealer/{username}; an empty one makes the profile
+    // unreachable, so fall back to the id, which that route also accepts.
+    username: dealer.username || String(dealer.id),
     designation: dealer.designation ?? "",
     image: absImage(dealer.image, origin),
     status: dealer.status ?? "",
