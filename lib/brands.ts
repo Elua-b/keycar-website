@@ -33,11 +33,21 @@ export function getBrandsForAdmin(): AdminBrand[] {
     .all(LANG) as unknown as AdminBrand[]
 }
 
+/**
+ * Returns a plain object, not the row as node:sqlite hands it over.
+ *
+ * `DatabaseSync` builds result rows with a null prototype, and React refuses
+ * to serialise those from a Server Component into a Client one — the brands
+ * page passes this straight to <BrandForm>, which is "use client", so the raw
+ * row crashed every edit with "Only plain objects ... can be passed to Client
+ * Components". Spreading it gives the object a normal prototype. The sibling
+ * car and blog edit pages avoid this by building their own literals.
+ */
 export function getBrand(id: number): AdminBrand | null {
   const row = getDb().prepare(`${BRAND_SELECT} WHERE b.id = ? LIMIT 1`).get(LANG, id) as unknown as
     | AdminBrand
     | undefined
-  return row ?? null
+  return row ? { ...row } : null
 }
 
 /** Slugs appear in listing URLs (`/listings?brand=kia`), so they must be unique. */
