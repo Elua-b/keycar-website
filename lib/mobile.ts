@@ -417,11 +417,21 @@ export function corsPreflight() {
  * `message`, matching how Laravel reported errors.
  */
 export function apiError(message: string, status = 400) {
-  return Response.json({ message }, { status, headers: corsHeaders() })
+  return Response.json(
+    { message },
+    { status, headers: { "Content-Type": "application/json; charset=utf-8", ...corsHeaders() } },
+  )
 }
 
 export function apiOk(body: unknown) {
   return Response.json(body, {
-    headers: { "Cache-Control": "no-store", ...corsHeaders() },
+    headers: {
+      // The charset is load-bearing. Dart's http package falls back to latin1
+      // when Content-Type omits it, which turns every non-ASCII character in
+      // the response into mojibake on the phone — "Coupé" renders "CoupÃ©".
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+      ...corsHeaders(),
+    },
   })
 }

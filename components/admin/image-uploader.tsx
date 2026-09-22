@@ -80,12 +80,14 @@ export function ImageUploader({ label, hint, multiple = false, value, onChange }
         <span className="text-sm font-semibold text-brand-900">
           {busy ? "Saving image to server…" : "Drop images here or click to browse"}
         </span>
-        <span className="text-xs text-slate-500">JPEG, PNG, WebP or AVIF · up to 10MB each</span>
+        <span className="text-xs text-slate-500">JPEG, PNG or WebP · up to 10MB each</span>
+        {/* AVIF is deliberately absent: the Flutter app cannot decode it, so
+            an AVIF upload shows as a broken placeholder throughout mobile. */}
         <input
           id={inputId}
           ref={inputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp,image/avif"
+          accept="image/jpeg,image/png,image/webp"
           multiple={multiple}
           className="sr-only"
           onChange={(e) => {
