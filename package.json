@@ -11,7 +11,8 @@
     "init-db": "node scripts/init-sqlite.mjs",
     "migrate-mobile-api": "node scripts/migrate-mobile-api.mjs",
     "seed-cars": "node scripts/seed-cars.mjs",
-    "seed-cars-korea": "node scripts/seed-cars-korea.mjs"
+    "seed-cars-korea": "node scripts/seed-cars-korea.mjs",
+    "seed-cars-rental": "node scripts/seed-cars-rental.mjs"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",
