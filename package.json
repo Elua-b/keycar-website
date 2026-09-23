@@ -3,16 +3,17 @@
   "version": "0.1.1",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "node api.js && next dev",
+    "build": "node api.js && next build",
+    "start": "node api.js && next start",
     "lint": "next lint",
     "create-admin": "node scripts/create-admin.mjs",
     "init-db": "node scripts/init-sqlite.mjs",
     "migrate-mobile-api": "node scripts/migrate-mobile-api.mjs",
     "seed-cars": "node scripts/seed-cars.mjs",
     "seed-cars-korea": "node scripts/seed-cars-korea.mjs",
-    "seed-cars-rental": "node scripts/seed-cars-rental.mjs"
+    "seed-cars-rental": "node scripts/seed-cars-rental.mjs",
+    "set-contact-phone": "node scripts/set-contact-phone.mjs"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",
