@@ -28,6 +28,14 @@ function loadEnv() {
 
 loadEnv()
 
+/**
+ * The public contact number, shown in the header, the footer, the contact page
+ * and under every inquiry form. International form so `tel:` links work from
+ * outside Rwanda; 0799521540 is the same line. To change it on a database that
+ * already exists, use scripts/set-contact-phone.mjs rather than editing here.
+ */
+const PUBLIC_PHONE = "+250 799 521 540"
+
 const dbPath = resolve(process.argv[2] || process.env.DATABASE_PATH || "data/keycar.sqlite")
 mkdirSync(dirname(dbPath), { recursive: true })
 
@@ -331,7 +339,7 @@ db.prepare(
   "Keycar",
   "",
   "hello@keycar.rw",
-  "+250 788 000 000",
+  PUBLIC_PHONE,
   "KN 5 Rd, Kigali, Rwanda",
   "Keycar is a Rwandan car marketplace connecting buyers with trusted dealers.",
   `Copyright ${new Date().getFullYear()} Keycar. All rights reserved.`,
@@ -352,7 +360,7 @@ db.prepare(
 ).run("FRw-RWF", "RW", "RWF", "RWF", "Yes", 1, "after_price", "active", ts, ts)
 
 db.prepare("INSERT INTO contact_us (phone, email, map_code, created_at, updated_at) VALUES (?,?,?,?,?)").run(
-  "+250 788 000 000",
+  PUBLIC_PHONE,
   "hello@keycar.rw",
   null,
   ts,
