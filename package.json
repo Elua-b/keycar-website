@@ -12,7 +12,8 @@
     "migrate-mobile-api": "node scripts/migrate-mobile-api.mjs",
     "seed-cars": "node scripts/seed-cars.mjs",
     "seed-cars-korea": "node scripts/seed-cars-korea.mjs",
-    "seed-cars-rental": "node scripts/seed-cars-rental.mjs"
+    "seed-cars-rental": "node scripts/seed-cars-rental.mjs",
+    "set-contact-phone": "node scripts/set-contact-phone.mjs"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",
