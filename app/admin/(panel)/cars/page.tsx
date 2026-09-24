@@ -2,7 +2,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { getCarsForAdmin, countAwaitingCars, getCurrency, type CarScope } from "@/lib/db"
 import { optimized } from "@/lib/images"
-import { effectivePrice, formatPrice, relativeDate, titleCase } from "@/lib/format"
+import { effectivePrice, formatPrice, priceCurrency, relativeDate, titleCase } from "@/lib/format"
 import { toggleFeaturedAction, toggleStatusAction } from "@/app/admin/actions"
 import { setCarApprovalAction } from "@/app/admin/manage-actions"
 import { DeleteCarButton } from "@/components/admin/delete-car-button"
@@ -137,7 +137,7 @@ export default async function AdminCarsPage({ searchParams }: { searchParams: Pr
                       )}
                     </td>
                     <td className="px-4 py-4 font-semibold text-brand-900">
-                      {formatPrice(effectivePrice(car), currency)}
+                      {formatPrice(effectivePrice(car), priceCurrency(car, currency))}
                     </td>
                     <td className="px-4 py-4 text-slate-600">{car.purpose ?? "—"}</td>
                     <td className="px-4 py-4 text-slate-600">{car.total_view}</td>
@@ -191,7 +191,7 @@ export default async function AdminCarsPage({ searchParams }: { searchParams: Pr
                       {car.title || car.slug}
                     </Link>
                     <p className="mt-0.5 text-sm text-slate-500">
-                      {car.brand_name ?? "—"} · {formatPrice(effectivePrice(car), currency)}
+                      {car.brand_name ?? "—"} · {formatPrice(effectivePrice(car), priceCurrency(car, currency))}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       <span

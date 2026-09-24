@@ -7,6 +7,32 @@ export interface Currency {
 
 export const DEFAULT_CURRENCY: Currency = { icon: "RWF", code: "RWF", position: "after_price" }
 
+/**
+ * Currencies a single car may be priced in, overriding the site default.
+ *
+ * Imported stock is quoted to us in the seller's currency, and converting it
+ * at a rate that moves weekly would misstate the asking price. So `cars`
+ * carries an optional `price_currency` and the amount is shown as quoted.
+ */
+const PER_CAR_CURRENCIES: Record<string, Currency> = {
+  USD: { icon: "$", code: "USD", position: "before_price" },
+  RWF: { icon: "RWF", code: "RWF", position: "after_price" },
+}
+
+/**
+ * The currency one car's price is quoted in — its own if it has one, else
+ * whatever the site is configured for. An unrecognised code falls back to the
+ * site currency rather than rendering a price with no unit at all.
+ */
+export function priceCurrency(
+  car: { price_currency?: string | null },
+  siteCurrency: Currency = DEFAULT_CURRENCY,
+): Currency {
+  const code = car.price_currency?.trim().toUpperCase()
+  if (!code) return siteCurrency
+  return PER_CAR_CURRENCIES[code] ?? siteCurrency
+}
+
 /** Non-breaking, so an amount and its currency code never wrap onto two lines. */
 const NBSP = "\u00a0"
 

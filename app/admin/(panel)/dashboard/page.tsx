@@ -8,7 +8,7 @@ import { countPendingKyc } from "@/lib/kyc"
 import { countPendingComments } from "@/lib/blog"
 import { countPendingReviews } from "@/lib/reviews"
 import { optimized } from "@/lib/images"
-import { effectivePrice, formatPrice, relativeDate } from "@/lib/format"
+import { effectivePrice, formatPrice, priceCurrency, relativeDate } from "@/lib/format"
 import { ArrowRightIcon, CarIcon, ChatIcon, CheckIcon, EyeIcon, GlobeIcon, IdCardIcon, MailIcon, PlusIcon, StarIcon, TagIcon, UploadIcon, UsersIcon } from "@/components/icons"
 
 export const dynamic = "force-dynamic"
@@ -130,7 +130,7 @@ export default function AdminDashboardPage() {
                     <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-slate-500">
                       <span>{car.brand_name ?? "—"}</span>
                       <span aria-hidden>·</span>
-                      <span>{formatPrice(effectivePrice(car), currency)}</span>
+                      <span>{formatPrice(effectivePrice(car), priceCurrency(car, currency))}</span>
                       <span aria-hidden>·</span>
                       <span>{relativeDate(car.created_at)}</span>
                     </span>

@@ -72,7 +72,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     agent_id INTEGER DEFAULT 0, brand_id INTEGER, city_id INTEGER, country_id INTEGER,
     thumb_image TEXT, slug TEXT, features TEXT, purpose TEXT, "condition" TEXT,
-    total_view INTEGER DEFAULT 0, regular_price REAL, offer_price REAL,
+    total_view INTEGER DEFAULT 0, regular_price REAL, offer_price REAL, price_currency TEXT,
     video_id TEXT, video_image TEXT, google_map TEXT,
     body_type TEXT, engine_size TEXT, drive TEXT, interior_color TEXT, exterior_color TEXT,
     year TEXT, mileage TEXT, number_of_owner TEXT, seats TEXT, fuel_type TEXT, transmission TEXT,

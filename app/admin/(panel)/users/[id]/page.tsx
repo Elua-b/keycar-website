@@ -5,7 +5,7 @@ import { getUser, getUserStats } from "@/lib/users"
 import { getCarsForAdmin, getCurrency } from "@/lib/db"
 import { getKycSubmissions } from "@/lib/kyc"
 import { optimized } from "@/lib/images"
-import { effectivePrice, formatPrice, relativeDate } from "@/lib/format"
+import { effectivePrice, formatPrice, priceCurrency, relativeDate } from "@/lib/format"
 import { updateUserAction, deleteUserAction } from "@/app/admin/manage-actions"
 import { ConfirmButton } from "@/components/admin/confirm-button"
 import { PageHeader, StatusPill } from "@/components/admin/page-header"
@@ -210,7 +210,7 @@ export default async function AdminUserPage({
                     {car.title || car.slug}
                   </Link>
                   <span className="text-xs text-slate-400">
-                    {car.brand_name ?? "—"} · {formatPrice(effectivePrice(car), currency)}
+                    {car.brand_name ?? "—"} · {formatPrice(effectivePrice(car), priceCurrency(car, currency))}
                   </span>
                 </span>
                 <StatusPill tone={car.status === "enable" ? "on" : "off"}>

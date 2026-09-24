@@ -1,5 +1,6 @@
 import "server-only"
 import { getDb, LANG, type Car, type Brand, type CityRow } from "./db"
+import { BASE_CURRENCY, convertibleCurrencies, getFxRates, toBaseAmount } from "./fx"
 import { imageUrl } from "./images"
 
 /**
@@ -107,7 +108,7 @@ function stringifyNumerics(row: Record<string, unknown>): Record<string, unknown
  * renamed on the Laravel side and the app was never updated.
  */
 export function carOut(car: Car, origin: string): Record<string, unknown> {
-  const row = stringifyNumerics(car as unknown as Record<string, unknown>)
+  const row = stringifyNumerics(priceInBaseCurrency(car) as unknown as Record<string, unknown>)
   return {
     ...row,
     thumb_image: absImage(car.thumb_image, origin),
@@ -116,6 +117,34 @@ export function carOut(car: Car, origin: string): Record<string, unknown> {
     brand: car.brand_name ? { id: car.brand_id, name: car.brand_name, slug: car.brand_slug } : null,
     city: car.city_name ? { id: car.city_id, name: car.city_name } : null,
     country: car.country_name ? { id: car.country_id, name: car.country_name } : null,
+  }
+}
+
+/**
+ * A copy of the car with its price restated in francs.
+ *
+ * The app has no per-car currency: `Utils.convertCurrency` multiplies by one
+ * global rate and appends one global symbol. So a car quoted in dollars is
+ * converted here, and `price_currency` is rewritten to the base code so the
+ * number and its label can never disagree.
+ *
+ * publicCarsClause() has already excluded anything with no rate on file, so
+ * the null branch is only reachable if a rate is deleted mid-request; the
+ * price is then left as quoted rather than zeroed.
+ */
+function priceInBaseCurrency(car: Car): Car {
+  const code = car.price_currency?.trim().toUpperCase()
+  if (!code || code === BASE_CURRENCY) return car
+
+  const rates = getFxRates()
+  const regular = toBaseAmount(car.regular_price, code, rates)
+  if (regular === null) return car
+
+  return {
+    ...car,
+    regular_price: regular,
+    offer_price: toBaseAmount(car.offer_price, code, rates),
+    price_currency: BASE_CURRENCY,
   }
 }
 
@@ -159,6 +188,22 @@ export interface DealerRow {
 const PUBLIC_CARS = `c.status = 'enable' AND c.approved_by_admin = 'approved' AND c.is_draft = 'disable'`
 
 /**
+ * The same visibility rules, plus: never serve a car the app would misprice.
+ *
+ * A car quoted in a foreign currency is converted to francs by carOut(). When
+ * no rate is on file for that currency it cannot be, and the app — which
+ * appends the franc symbol to whatever number it is handed — would advertise
+ * $29,600 as 29,600 RWF. Such a car is withheld until a rate is set, because
+ * a missing listing is recoverable and a wrong price is not.
+ */
+function publicCarsClause(): string {
+  const codes = convertibleCurrencies()
+    .map((c) => `'${c}'`)
+    .join(",")
+  return `${PUBLIC_CARS} AND (c.price_currency IS NULL OR c.price_currency = '' OR c.price_currency IN (${codes}))`
+}
+
+/**
  * Which sellers are publicly visible.
  *
  * Laravel also required `email_verified_at IS NOT NULL`, but that condition
@@ -190,7 +235,7 @@ export function getDealerRows(opts: { username?: string; limit?: number; offset?
     .prepare(
       `SELECT u.id, u.name, u.username, u.designation, u.image, u.status,
               u.is_banned, u.is_dealer, u.address, u.email, u.phone, u.kyc_status,
-              (SELECT COUNT(*) FROM cars c WHERE c.agent_id = u.id AND ${PUBLIC_CARS}) AS total_car
+              (SELECT COUNT(*) FROM cars c WHERE c.agent_id = u.id AND ${publicCarsClause()}) AS total_car
        FROM users u
        WHERE ${PUBLIC_DEALER} ${where}
        ORDER BY u.id DESC
@@ -290,7 +335,7 @@ export interface MobileCarFilters {
 /** Listing search shaped to the query params the app actually sends. */
 export function searchCars(f: MobileCarFilters): { cars: Car[]; total: number } {
   const db = getDb()
-  const where: string[] = [PUBLIC_CARS]
+  const where: string[] = [publicCarsClause()]
   const params: (string | number)[] = [f.lang, f.lang, f.lang]
 
   if (f.search) {

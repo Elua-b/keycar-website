@@ -20,6 +20,7 @@ export interface CarFormValues {
   condition: string
   regular_price: string
   offer_price: string
+  price_currency: string
   body_type: string
   engine_size: string
   drive: string
@@ -58,6 +59,8 @@ const PURPOSES = ["Sale", "Rent"]
 const RENT_PERIODS = ["day", "week", "month", "year"]
 const SEAT_COUNTS = ["2", "4", "5", "7", "8", "9", "12", "14", "16"]
 const SELLER_TYPES = ["Dealer", "Private", "Owner"]
+/** Empty = price this car in the site currency. Mirrors PER_CAR_CURRENCIES in lib/format.ts. */
+const PRICE_CURRENCIES = ["USD", "RWF"]
 
 export function CarForm({ mode, initial, brands, cities, dealers, currencyIcon }: Props) {
   const router = useRouter()
@@ -243,9 +246,27 @@ export function CarForm({ mode, initial, brands, cities, dealers, currencyIcon }
       </Section>
 
       {/* ---------- Pricing ---------- */}
-      <Section title="Pricing" desc="Set an offer price only if the car is discounted.">
+      <Section
+        title="Pricing"
+        desc="Set an offer price only if the car is discounted. Leave the currency on the site default unless this car is quoted in another one."
+      >
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field label={`Regular price (${currencyIcon})`} required>
+          <Field label="Currency">
+            <select
+              value={v.price_currency}
+              onChange={(e) => set("price_currency", e.target.value)}
+              className="field"
+            >
+              <option value="">Site default ({currencyIcon})</option>
+              {PRICE_CURRENCIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          <Field label={`Regular price (${v.price_currency || currencyIcon})`} required>
             <input
               type="number"
               min={0}
@@ -258,7 +279,7 @@ export function CarForm({ mode, initial, brands, cities, dealers, currencyIcon }
             />
           </Field>
 
-          <Field label={`Offer price (${currencyIcon})`}>
+          <Field label={`Offer price (${v.price_currency || currencyIcon})`}>
             <input
               type="number"
               min={0}

@@ -13,7 +13,10 @@
     "seed-cars": "node scripts/seed-cars.mjs",
     "seed-cars-korea": "node scripts/seed-cars-korea.mjs",
     "seed-cars-rental": "node scripts/seed-cars-rental.mjs",
-    "set-contact-phone": "node scripts/set-contact-phone.mjs"
+    "set-contact-phone": "node scripts/set-contact-phone.mjs",
+    "migrate-car-currency": "node scripts/migrate-car-currency.mjs",
+    "seed-cars-korea-stock": "node scripts/seed-cars-korea-stock.mjs",
+    "set-fx-rate": "node scripts/set-fx-rate.mjs"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",

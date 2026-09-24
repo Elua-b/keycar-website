@@ -51,6 +51,8 @@ export interface Car {
   total_view: number
   regular_price: number
   offer_price: number | null
+  /** Overrides the site currency for this car alone. Null = site default. */
+  price_currency: string | null
   video_id: string | null
   video_image: string | null
   google_map: string | null
@@ -550,6 +552,7 @@ export interface CarInput {
   condition: string
   regular_price: number
   offer_price: number | null
+  price_currency: string | null
   body_type: string | null
   engine_size: string | null
   drive: string | null
@@ -599,11 +602,11 @@ export function createCar(input: CarInput): number {
     .prepare(
       `INSERT INTO cars (
         agent_id, brand_id, city_id, country_id, thumb_image, slug, features, purpose,
-        condition, total_view, regular_price, offer_price, body_type, engine_size, drive,
+        condition, total_view, regular_price, offer_price, price_currency, body_type, engine_size, drive,
         interior_color, exterior_color, year, mileage, number_of_owner, seats, fuel_type,
         transmission, seller_type, rent_period, car_model, is_featured, status,
         approved_by_admin, is_draft, created_at, updated_at
-      ) VALUES (?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'approved','disable',?,?)`,
+      ) VALUES (?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'approved','disable',?,?)`,
     )
     .run(
       input.agent_id,
@@ -617,6 +620,7 @@ export function createCar(input: CarInput): number {
       input.condition,
       input.regular_price,
       input.offer_price,
+      input.price_currency,
       input.body_type,
       input.engine_size,
       input.drive,
@@ -660,7 +664,7 @@ export function updateCar(id: number, input: CarInput): void {
   db.prepare(
     `UPDATE cars SET
       agent_id=?, brand_id=?, city_id=?, country_id=?, thumb_image=?, slug=?, features=?, purpose=?,
-      condition=?, regular_price=?, offer_price=?, body_type=?, engine_size=?, drive=?,
+      condition=?, regular_price=?, offer_price=?, price_currency=?, body_type=?, engine_size=?, drive=?,
       interior_color=?, exterior_color=?, year=?, mileage=?, number_of_owner=?, seats=?, fuel_type=?,
       transmission=?, seller_type=?, rent_period=?, car_model=?, is_featured=?, status=?, updated_at=?
      WHERE id=?`,
@@ -676,6 +680,7 @@ export function updateCar(id: number, input: CarInput): void {
     input.condition,
     input.regular_price,
     input.offer_price,
+    input.price_currency,
     input.body_type,
     input.engine_size,
     input.drive,

@@ -38,6 +38,7 @@ export default async function EditCarPage({ params }: { params: Promise<{ id: st
     condition: car.condition ?? "used",
     regular_price: s(car.regular_price),
     offer_price: car.offer_price ? s(car.offer_price) : "",
+    price_currency: s(car.price_currency),
     body_type: s(car.body_type),
     engine_size: s(car.engine_size),
     drive: s(car.drive),

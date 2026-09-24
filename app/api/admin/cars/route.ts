@@ -64,6 +64,8 @@ function parseBody(body: Record<string, unknown>): { input?: CarInput; error?: s
       condition: str(body.condition, 20) ?? "used",
       regular_price,
       offer_price,
+      // Empty means "use the site currency", so it is stored as null.
+      price_currency: str(body.price_currency, 8)?.toUpperCase() ?? null,
       body_type: str(body.body_type, 60),
       engine_size: str(body.engine_size, 60),
       drive: str(body.drive, 60),

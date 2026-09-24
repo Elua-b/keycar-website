@@ -2,7 +2,7 @@ import Image from "next/image"
 import Link from "next/link"
 import type { Car } from "@/lib/db"
 import { optimized } from "@/lib/images"
-import { type Currency, DEFAULT_CURRENCY, effectivePrice, formatPrice, hasDiscount, discountPercent, formatMileage, titleCase } from "@/lib/format"
+import { type Currency, DEFAULT_CURRENCY, effectivePrice, formatPrice, hasDiscount, discountPercent, formatMileage, priceCurrency, titleCase } from "@/lib/format"
 import { CalendarIcon, FuelIcon, GaugeIcon, GearIcon, PinIcon, UsersIcon } from "./icons"
 
 interface Props {
@@ -14,6 +14,8 @@ interface Props {
 export function CarCard({ car, currency = DEFAULT_CURRENCY, priority = false }: Props) {
   const price = effectivePrice(car)
   const discounted = hasDiscount(car)
+  // Imported stock can be quoted in its own currency; fall back to the site's.
+  const cur = priceCurrency(car, currency)
 
   const specs = [
     car.year ? { icon: CalendarIcon, label: car.year } : null,
@@ -22,6 +24,9 @@ export function CarCard({ car, currency = DEFAULT_CURRENCY, priority = false }: 
     car.transmission ? { icon: GearIcon, label: titleCase(car.transmission) } : null,
     car.seats ? { icon: UsersIcon, label: `${car.seats} seats` } : null,
   ].filter(Boolean) as { icon: typeof CalendarIcon; label: string }[]
+
+  // Stock held abroad has no city on file, only the country.
+  const location = car.city_name ?? car.country_name
 
   return (
     <article className="card group flex h-full flex-col overflow-hidden hover:-translate-y-1 hover:shadow-card-hover">
@@ -60,12 +65,12 @@ export function CarCard({ car, currency = DEFAULT_CURRENCY, priority = false }: 
       <div className="flex flex-1 flex-col p-5">
         <div className="mb-2 flex items-center gap-2 text-xs font-medium text-slate-500">
           {car.brand_name ? <span className="text-brand-500">{car.brand_name}</span> : null}
-          {car.city_name ? (
+          {location ? (
             <>
               <span aria-hidden>·</span>
               <span className="inline-flex items-center gap-1">
                 <PinIcon className="h-3.5 w-3.5" />
-                {car.city_name}
+                {location}
               </span>
             </>
           ) : null}
@@ -91,10 +96,10 @@ export function CarCard({ car, currency = DEFAULT_CURRENCY, priority = false }: 
         <div className="mt-auto flex items-end justify-between gap-3">
           <div>
             {discounted ? (
-              <p className="text-xs text-slate-400 line-through">{formatPrice(car.regular_price, currency)}</p>
+              <p className="text-xs text-slate-400 line-through">{formatPrice(car.regular_price, cur)}</p>
             ) : null}
             <p className="text-xl font-extrabold text-brand-900">
-              {formatPrice(price, currency)}
+              {formatPrice(price, cur)}
               {car.purpose?.toLowerCase() === "rent" && car.rent_period ? (
                 <span className="ml-1 text-xs font-medium text-slate-500">/{car.rent_period}</span>
               ) : null}

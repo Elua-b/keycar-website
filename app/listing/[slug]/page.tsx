@@ -15,7 +15,7 @@ import { SiteFooter } from "@/components/site-footer"
 import { CarCard } from "@/components/car-card"
 import { CarGallery } from "@/components/car-gallery"
 import { InquiryForm } from "@/components/inquiry-form"
-import { effectivePrice, formatMileage, formatPrice, hasDiscount, discountPercent, parseFeatures, titleCase, relativeDate } from "@/lib/format"
+import { effectivePrice, formatMileage, formatPrice, hasDiscount, discountPercent, parseFeatures, priceCurrency, titleCase, relativeDate } from "@/lib/format"
 import { optimized } from "@/lib/images"
 import {
   CalendarIcon,
@@ -71,6 +71,10 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
 
   const images = [car.thumb_image, ...gallery.map((g) => g.image ?? "")].filter(Boolean) as string[]
   const price = effectivePrice(car)
+  // Imported stock can be quoted in its own currency; fall back to the site's.
+  const cur = priceCurrency(car, currency)
+  // Stock held abroad has no city on file, only the country.
+  const location = [car.city_name, car.country_name].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(", ")
   const discounted = hasDiscount(car)
 
   const specs = [
@@ -146,11 +150,10 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                     {car.brand_name}
                   </Link>
                 ) : null}
-                {car.city_name ? (
+                {location ? (
                   <span className="inline-flex items-center gap-1.5">
                     <PinIcon className="h-4 w-4 text-brand-400" />
-                    {car.city_name}
-                    {car.country_name ? `, ${car.country_name}` : ""}
+                    {location}
                   </span>
                 ) : null}
                 <span className="inline-flex items-center gap-1.5">
@@ -235,14 +238,14 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                   {car.purpose?.toLowerCase() === "rent" ? "Rental price" : "Asking price"}
                 </p>
                 <div className="mt-2 flex flex-wrap items-end gap-3">
-                  <p className="text-4xl font-extrabold text-brand-900">{formatPrice(price, currency)}</p>
+                  <p className="text-4xl font-extrabold text-brand-900">{formatPrice(price, cur)}</p>
                   {car.purpose?.toLowerCase() === "rent" && car.rent_period ? (
                     <span className="pb-1 text-sm font-medium text-slate-500">/ {car.rent_period}</span>
                   ) : null}
                 </div>
                 {discounted ? (
                   <p className="mt-1.5 flex items-center gap-2 text-sm">
-                    <span className="text-slate-400 line-through">{formatPrice(car.regular_price, currency)}</span>
+                    <span className="text-slate-400 line-through">{formatPrice(car.regular_price, cur)}</span>
                     <span className="rounded-pill bg-brand-100 px-2 py-0.5 text-xs font-bold text-brand-500">
                       Save {discountPercent(car)}%
                     </span>

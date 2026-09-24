@@ -26,6 +26,7 @@ export default function NewCarPage() {
     condition: "used",
     regular_price: "",
     offer_price: "",
+    price_currency: "",
     body_type: "",
     engine_size: "",
     drive: "",
