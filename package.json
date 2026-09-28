@@ -16,7 +16,8 @@
     "set-contact-phone": "node scripts/set-contact-phone.mjs",
     "migrate-car-currency": "node scripts/migrate-car-currency.mjs",
     "seed-cars-korea-stock": "node scripts/seed-cars-korea-stock.mjs",
-    "set-fx-rate": "node scripts/set-fx-rate.mjs"
+    "set-fx-rate": "node scripts/set-fx-rate.mjs",
+    "seed-cars-2026-09": "node scripts/seed-cars-2026-09.mjs"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",
